@@ -1,0 +1,74 @@
+html {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  display: flex;
+  flex-direction: column;
+  font-family:
+    Roboto,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Helvetica Neue',
+    'Segoe UI',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Open Sans',
+    sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/*定义滚动条高宽及背景 高宽分别对应横竖滚动条的尺寸*/
+::-webkit-scrollbar {
+  width: 4px;
+  height: 8px;
+  background-color: transparent;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+/*定义滚动条轨道 内阴影+圆角*/
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background-color: transparent
+}
+
+/*定义滑块 内阴影+圆角*/
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+  background-color: #CCCCCC;
+}
+
+/* 隐藏滚动条 */
+#message-input::-webkit-scrollbar-thumb  {
+  -webkit-box-shadow: inset 0 0 0px rgba(0, 0, 0, 0.3);
+  background-color: transparent;
+}
+
+/* 在滚动时显示滚动条 */
+#message-input:hover::-webkit-scrollbar-thumb  {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+  background-color: #CCCCCC;
+}
+
+#main-view-container::-webkit-scrollbar-thumb {
+  -webkit-box-shadow: inset 0 0 0px rgba(0, 0, 0, 0.3);
+  background-color: transparent;
+}
+
+#main-view-container:hover::-webkit-scrollbar-thumb  {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+  background-color: #CCCCCC;
+}

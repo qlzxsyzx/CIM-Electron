@@ -1,0 +1,12 @@
+// 此处更改element-plus的样式
+.el-dialog{
+    --el-dialog-bg-color: #f0f2f5;
+}
+
+.el-input-group__append:hover {
+    background-color: #e6e8eb;
+}
+
+.el-loading-mask{
+    background-color: #f0f2f5;
+}
