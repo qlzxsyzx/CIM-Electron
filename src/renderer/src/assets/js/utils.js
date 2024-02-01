@@ -4,7 +4,7 @@ const emojiMap = emojiList.reduce((acc, emoji) => {
   acc.set(emoji.name, emoji.url)
   return acc
 }, new Map())
-const emojiRegex = /\[(.+)\]/g
+const emojiRegex = /\[(.*?)\]/g
 
 // 输入框复制文本事件回调
 export const handlePaste = (e) => {
@@ -15,7 +15,7 @@ export const handlePaste = (e) => {
   if(!message){
     document.execCommand('insertText', false, clp.getData('text/plain'))
   }else {
-    document.execCommand('insertHtml', false, decodeMessageToHtml(encodeHtmlToMessage(html2)))
+    document.execCommand('insertHtml', false, message)
   }
 }
 
@@ -40,7 +40,7 @@ export const encodeHtmlToMessage = (html) => {
   const encodedHtml1 = html.replace(/<br.*?>/g, '\n')
   // 将消息中的<img src="xxx" title="name" class="cim-emoji"...>替换为[name]
   const encodedHtml2 = encodedHtml1.replace(
-    /<img src=".*?" title="(.+)" class="cim-emoji".*?\/?>/g,
+    /<img src=".*?" title="(.*?)" class="cim-emoji" width="25" height="25" style=".*?">/g,
     '[$1]'
   )
   // 将消息中的<img .* src="xxx" .* /?>替换为[图片 src='xxx']

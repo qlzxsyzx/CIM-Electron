@@ -41,7 +41,7 @@
                 </div>
                 <div class="input-area" id="input-area" ref="inputArea">
                     <div class="message-input" id="message-input" ref="messageInput" @paste="handleInputPaste"
-                        contenteditable="true" spellcheck="false" @input="handleInput" @click="handleRecordSelection"
+                        contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
                         @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
                 </div>
                 <div class="control-area">
@@ -55,7 +55,7 @@
 <script setup>
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
-import { handlePaste, encodeHtmlToMessage } from '../assets/js/utils';
+import { handlePaste, encodeHtmlToMessage, decodeMessageToHtml } from '../assets/js/utils';
 import { ref, computed, nextTick, watchPostEffect, onActivated } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
@@ -181,11 +181,6 @@ const info = {
 const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
-let recordRange = null // 保存选中的文本范围，用于粘贴时插入表情
-
-const handleInput = (e) => {
-    handleRecordSelection()
-}
 
 const handleInputPaste = (e) => {
     e.preventDefault()
@@ -195,50 +190,19 @@ const handleInputPaste = (e) => {
         const div = inputArea.value
         div.scrollTop = div.scrollHeight
     })
-} 
-
-const handleRecordSelection = () => {
-    // 获取焦点时记录选中的文本范围
-    if (document.activeElement != messageInput.value){
-        messageInput.value.focus()
-    }
-    // 记录div的光标位置
-    const selection = window.getSelection()
-    recordRange = selection.getRangeAt(0)
-    recordRange.collapse(false)
 }
 
 const selectEmoji = (item) => {
-    // 没有焦点就获取输入框焦点
-    let range = recordRange
+    // 插入表情，且可以撤销
     if (document.activeElement != messageInput.value) {
         messageInput.value.focus()
     }
-    if (!range) {
-        range = window.getSelection().getRangeAt(0)
-    }
-    // 往selection位置插入表情
-    const emojiFragment = document.createDocumentFragment()
-    const emojiImg = document.createElement('img')
-    emojiImg.src = item.url
-    emojiImg.title = item.name
-    emojiImg.className = 'cim-emoji'
-    emojiImg.style = 'vertical-align: middle;'
-    emojiImg.width = 25 // 表情图片
-    emojiImg.height = 25
-    emojiFragment.appendChild(emojiImg)
-    range.insertNode(emojiFragment)
-    range.setStartAfter(emojiImg)
-    range.setEndAfter(emojiImg)
-    recordRange = range // 更新记录的光标位置
+    restoreSelection()
+    document.execCommand('insertHTML', false, `<img src="${item.url}" title="${item.name}" class="cim-emoji" width="25" height="25" style="vertical-align: middle;">`)
+    saveSelection()
     emojiVisible.value = false
     nextTick(() => {
-        // 移动光标到表情后面
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
         messageInput.value.focus()
-        // 更新div的滚动位置，保持光标可见
         const div = inputArea.value
         div.scrollTop = div.scrollHeight
     })
@@ -263,38 +227,9 @@ const handleCtrlEnter = (e) => {
         messageInput.value.focus()
     }
     // 在光标处添加换行
-    let range = recordRange
-    if (!range) {
-        range = window.getSelection().getRangeAt(0)
-    }
-    range.deleteContents()
-    const children = messageInput.value.children
-    const br = document.createElement('br')
-    if (children.length > 1 && children[children.length - 2].tagName == 'IMG' && messageInput.value.innerHTML.endsWith('<br>')) {
-        console.log(children[children.length - 2].tagName)
-        const fragment = document.createDocumentFragment()
-        fragment.appendChild(br)
-        range.insertNode(fragment)
-    } else if (messageInput.value.innerHTML.endsWith('<br><br>')) {
-        console.log(children[children.length - 2].tagName)
-        const fragment = document.createDocumentFragment()
-        fragment.appendChild(br)
-        range.insertNode(fragment)
-    } else {
-        const fragment = document.createDocumentFragment()
-        const br2 = document.createElement('br')
-        fragment.appendChild(br)
-        fragment.appendChild(br2)
-        range.insertNode(fragment)
-    }
-    console.log(children)
-    range.setStartAfter(br)
-    range.setEndAfter(br)
-    recordRange = range
-    // 移动光标到换行后面
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+    restoreSelection()
+    document.execCommand('insertLineBreak')
+    saveSelection()
     messageInput.value.focus()
     nextTick(() => {
         // 更新div的滚动位置，保持光标可见
@@ -306,7 +241,7 @@ const handleCtrlEnter = (e) => {
 const handleSendMesage = () => {
     const message = messageInput.value.innerHTML
     console.log('发送消息', message)
-    console.log('encode',encodeHtmlToMessage(message))
+    console.log('encode', encodeHtmlToMessage(message))
     if (!message) return
     // 发送消息, 先请求后端添加数据库，失败报错！
     // 成功后端返回消息vo，前端保存，用于撤回
@@ -321,6 +256,7 @@ const handleSendMesage = () => {
     chatStore.sendMessage(createMessageDto).then(res => {
         if (res.code == 200) {
             console.log('发送成功')
+            scrollToBottom()
         } else {
             console.log(res.msg)
         }
@@ -330,6 +266,49 @@ const handleSendMesage = () => {
     messageInput.value.innerHTML = ''
 }
 
+// copy
+let _parentElem = null
+let currentRange = null
+function getCurrentRange() {
+    var selection,
+        range,
+        txt = messageInput.value;
+    if (document.createRange) {
+        selection = document.getSelection();
+        if (selection.getRangeAt && selection.rangeCount) {
+            range = document.getSelection().getRangeAt(0);
+            _parentElem = range.commonAncestorContainer;
+        }
+    } else {
+        range = document.selection.createRange();
+        _parentElem = range.parentElement();
+    }
+    return range;
+}
+function saveSelection() {
+    currentRange = getCurrentRange();
+}
+function restoreSelection() {
+    if (!currentRange) {
+        return;
+    }
+    var selection,
+        range;
+    if (document.createRange) {
+        selection = document.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(currentRange);
+    } else {
+        range = document.selection.createRange();
+        range.setEndPoint('EndToEnd', currentRange);
+        if (currentRange.text.length === 0) {
+            range.collapse(false);
+        } else {
+            range.setEndPoint('StartToStart', currentRange);
+        }
+        range.select();
+    }
+}
 </script>
 
 <style scoped>
@@ -394,7 +373,6 @@ const handleSendMesage = () => {
 .message-input {
     margin: 0 10px;
     outline: 0 !important;
-    height: 100%;
     word-wrap: break-word;
     word-break: break-all;
     line-height: 25px;
