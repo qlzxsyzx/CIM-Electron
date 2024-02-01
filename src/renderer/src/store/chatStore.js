@@ -12,33 +12,46 @@ import { getGroupList, createGroup } from '../api/group'
 export const useChatStore = defineStore('chatStore', {
   state: () => {
     return {
-      friends: [], // 好友列表
+      friendList: [], // 好友列表
       groupList: [], // 群组列表
       recentChatList: [], // 最近聊天列表
-      userInfoList: [], // 用户信息列表
+      userInfoMap: new Map(), // 用户信息列表 key:userId
+      myGroupSettingMap: new Map(), // 我的群组设置 key:groupId
       groupMemberList: [], // 群成员列表
       currentChatInfo: {}, // 当前聊天信息
       currentChatHistory: [] // 当前聊天记录
     }
   },
   actions: {
-    getFriends() {
+    getFriendList() {
       getFriendList().then((res) => {
         if (res.code === 200) {
-          this.friends = res.data
+          const friendItemList = res.data
+          this.friendList = friendItemList.map((item) => item.friend)
+          // 向userInfoMap添加
+          friendItemList.forEach(element => {
+            this.userInfoMap.set(element.userInfo.userId, element.userInfo)
+          });
         }
       })
     },
     getGroupList() {
       getGroupList().then((res) => {
         if (res.code === 200) {
-          this.groupList = res.data
+          // group,groupSetting
+          const groupItemList = res.data
+          this.groupList = groupItemList.map((item) => item.group)
+          // 向myGroupSettingMap添加
+          groupItemList.forEach(element => {
+            this.myGroupSettingMap.set(element.groupSetting.groupId, element.groupSetting)
+          })
         }
       })
     },
     async getRecentChatList() {
       const res = await recentChatList()
       if (res.code === 200) {
+        // recentChat,sender,lastMessage
         this.recentChatList = res.data
       }
       return res
@@ -53,7 +66,7 @@ export const useChatStore = defineStore('chatStore', {
       return res
     },
     recordCurrentChatInfo(roomId){
-      this.currentChatInfo = this.recentChatList.find(item => item.roomId == roomId)
+      this.currentChatInfo = this.recentChatList.find(item => item.recentChat.roomId == roomId).recentChat
     },
     // 获取分页聊天记录
     async getChatMessageList(roomId, pageNum, pageSize) {

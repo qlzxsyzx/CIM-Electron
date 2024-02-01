@@ -1,11 +1,11 @@
 <template>
     <div class="friend-item-container" :class="{'click' : isClick}" @click="openFriendInfo()">
         <div class="item-avatar-container">
-            <el-avatar class="avatar" :src="props.friend.userVo.avatarUrl"/>
+            <el-avatar class="avatar" :src="userInfo.avatarUrl"/>
         </div>
         <div class="item-data-container">
             <div class="item-name">
-                {{ props.friend.remark || props.friend.userVo.name}}
+                {{ props.friend.remark || userInfo.name}}
             </div>
         </div>
     </div>
@@ -13,7 +13,9 @@
 <script setup>
 import {ref,computed} from 'vue'
 import { useRouter,useRoute } from 'vue-router';
+import { useChatStore } from '../store/chatStore'
 
+const chatStore = useChatStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -22,6 +24,11 @@ const props = defineProps(["friend"])
 const isClick = computed(() =>{
     return route.params.friendId == props.friend.id
 })
+
+const userInfo = computed(() => {
+    return chatStore.userInfoMap.get(props.friend.friendId)
+})
+
 const openFriendInfo =() => {
     router.push({path: '/friend/info/'+ props.friend.id})
 }

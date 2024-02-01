@@ -28,10 +28,10 @@
 </template>
 
 <script setup>
-import { ref,computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useUserStore } from '../store/userStore';
 import { useChatStore } from '../store/chatStore';
-import { useRouter,useRoute } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import ButtonBox from './ButtonBox.vue'
 
 const userStore = useUserStore()
@@ -49,23 +49,14 @@ const clickMenu = (num) => {
             router.push('/home')
             break
         case 1:
-            // 查询是否存在点击过的对话
-            const currentChatInfo =  chatStore.currentChatInfo
-            if(currentChatInfo){
-                if(currentChatInfo.type === 0){
-                    router.push('/chat/single/' + currentChatInfo.roomId)
-                    return
-                }else if(currentChatInfo.type === 1) {
-                    router.push('/chat/group/' + currentChatInfo.roomId)
-                    return
-                }
-            }
-            router.push('/chat/home')
+            handleClickChat()
             break
         case 2:
+            chatStore.getFriendList()
             router.push('/friend/home')
             break
         case 3:
+            chatStore.getGroupList()
             router.push('/group/home')
             break
         case 4:
@@ -75,6 +66,31 @@ const clickMenu = (num) => {
     }
 }
 
+
+const handleClickChat = () => {
+    chatStore.getRecentChatList().then((res) => {
+        if (res.code === 200) {
+            // 获取当前的roomId
+            const roomId = route.params.roomId
+            if (roomId) {
+                // 存在roomId，则打开聊天室
+                chatStore.recordCurrentChatInfo(roomId)
+                // 查询是否存在点击过的对话
+                const currentChatInfo = chatStore.currentChatInfo
+                if (currentChatInfo) {
+                    if (currentChatInfo.type === 0) {
+                        router.push('/chat/single/' + currentChatInfo.roomId)
+                        return
+                    } else if (currentChatInfo.type === 1) {
+                        router.push('/chat/group/' + currentChatInfo.roomId)
+                        return
+                    }
+                }
+            }
+            router.push('/chat/home')
+        }
+    })
+}
 
 </script>
 

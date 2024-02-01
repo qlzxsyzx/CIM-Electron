@@ -1,9 +1,9 @@
 <template>
     <div class="main-container" v-loading="isLoading">
-        <template v-if="chatBaseInfo">
+        <template v-if="friend">
             <div class="main-top-container">
                 <div class="top-name">
-                    {{ chatBaseInfo.friendVo.remark || chatBaseInfo.friendVo.userVo.name }}
+                    {{ friend.remark || friendUserInfo.name }}
                 </div>
                 <div class="top-more">
                     <SvgIcon iconName="more" style="width: 25px;"></SvgIcon>
@@ -11,7 +11,7 @@
             </div>
             <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
                 <template v-for="item in chatMessageList" :key="item.messageId">
-                    <MessageItem :id="'message-' + item.messageId" :userInfo="chatBaseInfo.friendVo" :messageInfo="item" />
+                    <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
                 </template>
             </div>
             <div class="main-footer-container">
@@ -39,9 +39,10 @@
                         <SvgIcon iconName="video" iconClass="tool"></SvgIcon>
                     </div>
                 </div>
-                <div class="input-area">
-                    <div class="message-input" id="message-input" ref="messageInput" @paste="handlePaste"
-                        contenteditable="true" spellcheck="false" autofocus></div>
+                <div class="input-area" id="input-area" ref="inputArea">
+                    <div class="message-input" id="message-input" ref="messageInput" @paste="handleInputPaste"
+                        contenteditable="true" spellcheck="false" @input="handleInput" @click="handleRecordSelection"
+                        @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
                 </div>
                 <div class="control-area">
                     <el-button type="primary" @click="handleSendMesage">发送</el-button>
@@ -54,7 +55,7 @@
 <script setup>
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
-import { handlePaste } from '../assets/js/utils';
+import { handlePaste, encodeHtmlToMessage } from '../assets/js/utils';
 import { ref, computed, nextTick, watchPostEffect, onActivated } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
@@ -107,12 +108,16 @@ useReconnect(() => {
     })
 })
 
-const chatBaseInfo = computed(() => {
-    if (chatStore.currentChatInfo.roomId) {
-        return chatStore.currentChatInfo
-    } else {
-        return null
-    }
+const friend = computed(() => {
+    return chatStore.friendList.find(item => item.friendId === currentChatInfo.value.toUserId)
+})
+
+const friendUserInfo = computed(() => {
+    return chatStore.userInfoMap.get(currentChatInfo.value.toUserId)
+})
+
+const currentChatInfo = computed(() => {
+    return chatStore.currentChatInfo
 })
 
 const chatMessageList = computed(() => {
@@ -124,7 +129,7 @@ const chatMessageList = computed(() => {
 })
 
 watchPostEffect(() => {
-    if (chatBaseInfo.value !== null && !isLoading.value && isNeedScrollToBottom.value) {
+    if (friend.value !== null && !isLoading.value && isNeedScrollToBottom.value) {
         firstOpenScroll()
     }
 })
@@ -132,6 +137,7 @@ watchPostEffect(() => {
 const firstOpenScroll = async () => {
     await nextTick()
     const el = document.getElementById('main-view-container')
+    if (!el) return
     el.scrollTop = el.scrollHeight
 }
 
@@ -172,31 +178,144 @@ const info = {
     }
 }
 
+const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
+let recordRange = null // 保存选中的文本范围，用于粘贴时插入表情
+
+const handleInput = (e) => {
+    handleRecordSelection()
+}
+
+const handleInputPaste = (e) => {
+    e.preventDefault()
+    handlePaste(e)
+    nextTick(() => {
+        // 更新div的滚动位置，保持光标可见
+        const div = inputArea.value
+        div.scrollTop = div.scrollHeight
+    })
+} 
+
+const handleRecordSelection = () => {
+    // 获取焦点时记录选中的文本范围
+    if (document.activeElement != messageInput.value){
+        messageInput.value.focus()
+    }
+    // 记录div的光标位置
+    const selection = window.getSelection()
+    recordRange = selection.getRangeAt(0)
+    recordRange.collapse(false)
+}
 
 const selectEmoji = (item) => {
     // 没有焦点就获取输入框焦点
+    let range = recordRange
     if (document.activeElement != messageInput.value) {
         messageInput.value.focus()
     }
-    let emojiImg = `<img src="${item.url}" width="25" height="25" style="vertical-align: middle;">`
-    document.execCommand('insertHTML', false, emojiImg)
+    if (!range) {
+        range = window.getSelection().getRangeAt(0)
+    }
+    // 往selection位置插入表情
+    const emojiFragment = document.createDocumentFragment()
+    const emojiImg = document.createElement('img')
+    emojiImg.src = item.url
+    emojiImg.title = item.name
+    emojiImg.className = 'cim-emoji'
+    emojiImg.style = 'vertical-align: middle;'
+    emojiImg.width = 25 // 表情图片
+    emojiImg.height = 25
+    emojiFragment.appendChild(emojiImg)
+    range.insertNode(emojiFragment)
+    range.setStartAfter(emojiImg)
+    range.setEndAfter(emojiImg)
+    recordRange = range // 更新记录的光标位置
     emojiVisible.value = false
+    nextTick(() => {
+        // 移动光标到表情后面
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        messageInput.value.focus()
+        // 更新div的滚动位置，保持光标可见
+        const div = inputArea.value
+        div.scrollTop = div.scrollHeight
+    })
+}
+
+const handleEnter = (e) => {
+    e.preventDefault()
+    if (emojiVisible.value) {
+        emojiVisible.value = false
+        return
+    }
+    handleSendMesage()
+}
+
+const handleCtrlEnter = (e) => {
+    e.preventDefault()
+    if (emojiVisible.value) {
+        emojiVisible.value = false
+        return
+    }
+    if (document.activeElement != messageInput.value) {
+        messageInput.value.focus()
+    }
+    // 在光标处添加换行
+    let range = recordRange
+    if (!range) {
+        range = window.getSelection().getRangeAt(0)
+    }
+    range.deleteContents()
+    const children = messageInput.value.children
+    const br = document.createElement('br')
+    if (children.length > 1 && children[children.length - 2].tagName == 'IMG' && messageInput.value.innerHTML.endsWith('<br>')) {
+        console.log(children[children.length - 2].tagName)
+        const fragment = document.createDocumentFragment()
+        fragment.appendChild(br)
+        range.insertNode(fragment)
+    } else if (messageInput.value.innerHTML.endsWith('<br><br>')) {
+        console.log(children[children.length - 2].tagName)
+        const fragment = document.createDocumentFragment()
+        fragment.appendChild(br)
+        range.insertNode(fragment)
+    } else {
+        const fragment = document.createDocumentFragment()
+        const br2 = document.createElement('br')
+        fragment.appendChild(br)
+        fragment.appendChild(br2)
+        range.insertNode(fragment)
+    }
+    console.log(children)
+    range.setStartAfter(br)
+    range.setEndAfter(br)
+    recordRange = range
+    // 移动光标到换行后面
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    messageInput.value.focus()
+    nextTick(() => {
+        // 更新div的滚动位置，保持光标可见
+        const div = inputArea.value
+        div.scrollTop = div.scrollHeight
+    })
 }
 
 const handleSendMesage = () => {
-    let message = messageInput.value.innerHTML
+    const message = messageInput.value.innerHTML
     console.log('发送消息', message)
+    console.log('encode',encodeHtmlToMessage(message))
     if (!message) return
     // 发送消息, 先请求后端添加数据库，失败报错！
     // 成功后端返回消息vo，前端保存，用于撤回
     const createMessageDto = {
         roomId: route.params.roomId,
-        receiverId: chatBaseInfo.value.friendVo.userVo.userId,
+        receiverId: friendUserInfo.value.userId,
         receiverType: 1,
         type: 1,
-        content: message,
+        content: encodeHtmlToMessage(message),
         recordId: null
     }
     chatStore.sendMessage(createMessageDto).then(res => {
@@ -223,7 +342,7 @@ const handleSendMesage = () => {
 
 .main-top-container {
     padding: 0 30px;
-    height: 100px;
+    min-height: 100px;
     border-bottom: 1px solid var(--el-color-info-light-5);
     display: flex;
     flex-direction: row;
@@ -236,13 +355,14 @@ const handleSendMesage = () => {
     width: 100%;
     overflow-y: auto;
     margin-bottom: 10px;
+    min-height: 400px;
 }
 
 .main-footer-container {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 200px;
+    height: 400px;
     border-top: 1px solid var(--el-color-info-light-5);
 }
 
@@ -267,15 +387,17 @@ const handleSendMesage = () => {
 .input-area {
     width: 100%;
     flex: 1;
+    overflow: auto;
+    cursor: text;
 }
 
 .message-input {
     margin: 0 10px;
     outline: 0 !important;
-    height: 100px;
-    overflow: auto;
+    height: 100%;
     word-wrap: break-word;
     word-break: break-all;
+    line-height: 25px;
 }
 
 .control-area {

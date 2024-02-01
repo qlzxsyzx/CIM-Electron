@@ -31,6 +31,7 @@ const recentChatList = computed(() => chatStore.recentChatList);
 
 useReconnect(() => {
     userStore.getUserInfo()
+    chatStore.getFriendList()
 })
 
 // ws收到消息的回调，todo:先做简单的，
@@ -119,6 +120,22 @@ onBeforeMount(() => {
             window.location.href = '/login';
         })
     }
+    // 获取好友
+    chatStore.getFriendList()
+    // 获取群组
+    chatStore.getGroupList()
+    // 获取最近会话
+    chatStore.getRecentChatList().then((res) => {
+        if (res.code === 200) {
+            // 获取当前的roomId
+            const roomId = route.params.roomId
+            if (roomId) {
+                // 存在roomId，则打开聊天室
+                chatStore.recordCurrentChatInfo(roomId)
+            }
+        }
+    })
+    
     const loginParam = {
         userId: userInfo.userId,
         userToken: userStore.tokenInfo.access_token,

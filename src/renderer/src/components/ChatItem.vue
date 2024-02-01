@@ -1,74 +1,100 @@
 <template>
-    <div class="chat-item-container" :class="{ 'click': isClick }">
-        <template v-if="props.chatItem.type === 0">
-            <div class="item-avatar-container">
-                <template v-if="props.chatItem.unreadCount > 0">
-                    <el-badge :value="props.chatItem.unreadCount" :max="99" class="item-tip">
-                        <el-avatar class="avatar" :src="props.chatItem.friendVo.userVo.avatarUrl" />
-                    </el-badge>
-                </template>
-                <template v-else>
-                    <el-avatar class="avatar" :src="props.chatItem.friendVo.userVo.avatarUrl" />
-                </template>
-            </div>
-            <div class="item-data-container">
-                <div class="item-data-name-time">
-                    <div class="item-name">
-                        {{ props.chatItem.friendVo.remark || props.chatItem.friendVo.userVo.name }}
-                    </div>
-                    <div class="item-time">
-                        {{ lastMessageTime }}
-                    </div>
+    <div v-if="chatInfo" class="chat-item-container" :class="{ 'click': isClick }">
+        <div class="item-avatar-container">
+            <template v-if="props.chatItem.recentChat.unreadCount > 0">
+                <el-badge :value="props.chatItem.recentChat.unreadCount" :max="99" class="item-tip">
+                    <el-avatar class="avatar" :src="avatarUrl" />
+                </el-badge>
+            </template>
+            <template v-else>
+                <el-avatar class="avatar" :src="avatarUrl" />
+            </template>
+        </div>
+        <div class="item-data-container">
+            <div class="item-data-name-time">
+                <div class="item-name">
+                    {{ name }}
                 </div>
-                <div v-if="props.chatItem.lastMessage" class="item-data-recent-message">
-                    {{ props.chatItem.lastMessage.content }}
+                <div class="item-time">
+                    {{ lastMessageTime }}
                 </div>
             </div>
-        </template>
-        <template v-else-if="props.chatItem.type === 1">
-            <div class="item-avatar-container">
-                <template v-if="props.chatItem.unreadCount > 0">
-                    <el-badge :value="props.chatItem.unreadCount" :max="99" class="item-tip">
-                        <el-avatar class="avatar" :src="props.chatItem.groupVo.avatarUrl" />
-                    </el-badge>
-                </template>
-                <template v-else>
-                    <el-avatar class="avatar" :src="props.chatItem.groupVo.avatarUrl" />
-                </template>
+            <div v-if="props.chatItem.lastMessage" class="item-data-recent-message">
+                {{ lastMessageContent }}
             </div>
-            <div class="item-data-container">
-                <div class="item-data-name-time">
-                    <div class="item-name">
-                        {{ props.chatItem.groupVo.groupNickName || props.chatItem.groupVo.name }}
-                    </div>
-                    <div class="item-time">
-                        {{ lastMessageTime }}
-                    </div>
-                </div>
-                <div v-if="props.chatItem.lastMessage" class="item-data-recent-message">
-                    {{ props.chatItem.lastMessage.content }}
-                </div>
-            </div>
-        </template>
+        </div>
     </div>
 </template>
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router';
 import { formatLocalDateTimeToText } from '../assets/js/format'
+import { useChatStore } from '../store/chatStore';
 
 const route = useRoute()
 const props = defineProps(["chatItem"])
+const chatStore = useChatStore()
+
+const chatInfo = computed(() => {
+    if (props.chatItem.recentChat.type == 0) {
+        // 私聊
+        return chatStore.userInfoMap.get(props.chatItem.recentChat.toUserId)
+    } else {
+        // 群聊
+        return chatStore.groupList.find(item => item.id == props.chatItem.recentChat.groupId)
+    }
+})
+
+const avatarUrl = computed(() => {
+    return chatInfo.value.avatarUrl
+})
+
+const name = computed(() => {
+    if (props.chatItem.recentChat.type == 0) {
+        // 私聊
+        const friend = chatStore.friendList.find(item => item.friendId == props.chatItem.recentChat.toUserId)
+        return friend.remark || chatInfo.value.name
+    } else {
+        // 群聊
+        const groupSetting = chatStore.myGroupSettingMap.get(props.chatItem.recentChat.groupId)
+        if (groupSetting) {
+            return groupSetting.groupNickName || chatInfo.value.name
+        }
+        return chatInfo.value.name
+    }
+})
 
 const isClick = computed(() => {
-    return route.params.roomId == props.chatItem.roomId
+    return route.params.roomId == props.chatItem.recentChat.roomId
+})
+
+const lastMessageContent = computed(() => {
+    if (props.chatItem.recentChat.type == 0) {
+        // 私聊
+        return props.chatItem.lastMessage.content
+    } else {
+        // 群聊
+        const sender = props.chatItem.sender
+        if (sender === null) {
+            return '我：' + props.chatItem.lastMessage.content
+        } else {
+            const friend = chatStore.friendList.find(item => item.friendId == sender.userInfo.userId)
+            if (friend === null) {
+                // 不是好友
+                return sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+            }else {
+                // 是好友
+                return friend.remark || sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+            }
+        }
+    }
 })
 
 const lastMessageTime = computed(() => {
     if (props.chatItem.lastMessage) {
         return formatLocalDateTimeToText(props.chatItem.lastMessage.createTime)
     } else {
-        return formatLocalDateTimeToText(props.chatItem.createTime)
+        return formatLocalDateTimeToText(props.chatItem.recentChat.createTime)
     }
 })
 </script>
@@ -80,6 +106,7 @@ const lastMessageTime = computed(() => {
     padding: 10px;
     border-radius: 5px;
     cursor: pointer;
+    height: 70px;
 
     @keyframes fill {
         0% {

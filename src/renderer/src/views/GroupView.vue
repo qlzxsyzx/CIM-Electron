@@ -41,9 +41,6 @@ import sortListToMap from '../assets/js/sort-first-word'
 import SideTopToolBar from '../components/SideTopToolBar.vue'
 import { useReconnect } from '../assets/js/reconnectMixin'
 
-onBeforeMount(() => {
-    chatStore.getGroupList()
-})
 useReconnect(() => {
     chatStore.getGroupList()
 })

@@ -2,39 +2,23 @@
     <div class="chat-msg-item">
         <div class="chat-msg-normal" :class="'chat-msg-' + position">
             <div class="head-image">
-                <template v-if="position === 'right'">
-                    <el-avatar :src="userStore.userInfo.avatarUrl" />
-                </template>
-                <template v-else>
-                    <el-avatar :src="props.userInfo.userVo.avatarUrl" />
-                </template>
+                <el-avatar :src="userInfo.avatarUrl" />
             </div>
             <div class="chat-msg-content">
                 <div class="chat-msg-top">
-                    <template v-if="!isGroup">
-                        <template v-if="position === 'right'">
-                            <span>{{ userStore.userInfo.name }}</span>
-                        </template>
-                        <template v-else>
-                            <span>{{ props.userInfo.remark || props.userInfo.userVo.name }}</span>
-                        </template>
-                    </template>
-                    <template v-else>
-                        <span>{{ props.userInfo.userNickName || props.userInfo.userVo.name }}</span>
-                    </template>
-                    <span>{{ props.messageInfo.createTime }}</span>
+                    <span>{{ name }}</span>
+                    <span>{{ formatMessageDateTime(props.messageInfo.createTime) }}</span>
                 </div>
                 <div class="chat-msg-bottom">
                     <div class="msg-container">
                         <template v-if="type === 'text'">
                             <!-- 文字消息 -->
-                            <span class="chat-msg-text">
-                                {{ props.messageInfo.content }}
-                            </span>
+                            <div class="chat-msg-text" v-html="decodeMessageToHtml(props.messageInfo.content)">
+                            </div>
                         </template>
                         <!-- 文件消息,实时显示上传下载进度，重试，取消，下载按钮，文件大小 -->
                         <template v-else-if="type === 'file'">
-                            <template v-if="props.mine">
+                            <template v-if="props.position">
                                 <FileUploadMessage :fileInfo="props.info.fileInfo" />
                             </template>
                             <template v-else>
@@ -53,17 +37,52 @@ import { computed } from 'vue'
 import FileUploadMessage from './FileUploadMessage.vue';
 import FileDownloadMessage from './FileDownloadMessage.vue';
 import { useUserStore } from '../store/userStore'
+import { useChatStore } from '../store/chatStore';
+import { formatMessageDateTime } from '../assets/js/format'
+import { decodeMessageToHtml } from '../assets/js/utils';
 
-const props = defineProps(["userInfo", "messageInfo", "isGroup"])
+const props = defineProps(["messageInfo"])
 const userStore = useUserStore()
+const chatStore = useChatStore()
 
-const position = computed(() => {
-    return userStore.userInfo.userId === props.messageInfo.senderId ? "right" : "left";
+const currentChatInfo = computed(() => {
+    return chatStore.currentChatInfo
 })
 
+const userInfo = computed(() => {
+    if (props.messageInfo.senderId === userStore.userInfo.userId) {
+        //自己
+        return userStore.userInfo
+    } else {
+        return chatStore.userInfoMap.get(props.messageInfo.senderId)
+    }
+})
 
-const isGroup = computed(() => {
-    return props.isGroup
+const name = computed(() => {
+    if (currentChatInfo.value.type == 0) {
+        // 私聊
+        if (props.messageInfo.senderId === userStore.userInfo.userId) {
+            //自己
+            return userInfo.value.name
+        } else {
+            const friend = chatStore.friendList.find(item => item.friendId == currentChatInfo.value.toUserId)
+            return friend.remark || userInfo.value.name
+        }
+    } else {
+        // 群聊
+        const groupMember = chatStore.groupMemberList.find(item => item.userId == userInfo.value.userId && item.groupId == currentChatInfo.value.groupId)
+        if (props.messageInfo.senderId === userStore.userInfo.userId) {
+            //自己
+            return groupMember.userNickName || userInfo.value.name
+        } else {
+            const friend = chatStore.friendList.find(item => item.friendId == userInfo.value.userId)
+            return friend.remark || groupMember.userNickName || userInfo.value.name
+        }
+    }
+})
+
+const position = computed(() => {
+    return userInfo.value.userId === userStore.userInfo.userId ? "right" : "left";
 })
 
 const type = computed(() => {

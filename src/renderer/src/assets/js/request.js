@@ -7,7 +7,7 @@ axios.defaults.withCredentials = true
 
 const service = axios.create({
   baseURL: import.meta.env.RENDERER_VITE_BASE_URL, // 设置默认的 baseURL
-  timeout: 5000 // 设置默认的 timeout
+  timeout: 10000 // 设置默认的 timeout
 })
 
 let fullScreenLoading = null
@@ -73,6 +73,11 @@ service.interceptors.response.use(
     }
   },
   (error) => {
+    const userStore = useUserStore()
+    userStore.reqCount--
+    if(userStore.reqCount === 0){
+      fullScreenLoading.close()
+    }
     console.error('Error in response:', error)
     return Promise.reject(error)
   }

@@ -1,4 +1,3 @@
-
 export const formatLocalDateTimeToText = (localDateTime) => {
     // localDateTime比较当前时间，显示当天时间，昨天，星期，日期
     const date = new Date(localDateTime)
@@ -20,4 +19,10 @@ export const formatLocalDateTimeToText = (localDateTime) => {
             return dayofWeek[weekDay]
         }
     }
+}
+
+
+export const formatMessageDateTime = (localDateTime) => {
+    const date = new Date(localDateTime)
+    return date.toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})
 }

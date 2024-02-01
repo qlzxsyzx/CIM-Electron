@@ -1,10 +1,6 @@
 <template>
-    <div class="friend-info-container">
+    <div class="friend-info-container" v-if="currentFriendInfo">
         <div class="info-container">
-            <template v-if="!currentFriendInfo">
-
-            </template>
-            <template v-else>
                 <div class="more">
                     <el-dropdown trigger="click" placement="right-start" @command="handleCommand">
                         <div>
@@ -21,16 +17,16 @@
                     </el-dropdown>
                 </div>
                 <div class="info">
-                    <el-avatar :size="100" :src="currentFriendInfo.userVo.avatarUrl"></el-avatar>
+                    <el-avatar :size="100" :src="userInfo.avatarUrl"></el-avatar>
                     <div class="user-info">
                         <template v-if="currentFriendInfo.remark">
                             <span class="name"> {{ currentFriendInfo.remark }} </span>
-                            <span class="more-info">昵称：{{ currentFriendInfo.userVo.name }}</span>
+                            <span class="more-info">昵称：{{ userInfo.name }}</span>
                         </template>
                         <template v-else>
-                            <span class="name"> {{ currentFriendInfo.userVo.name }} </span>
+                            <span class="name"> {{ userInfo.name }} </span>
                         </template>
-                        <span class="more-info">账号：{{ currentFriendInfo.userVo.username }}</span>
+                        <span class="more-info">账号：{{ userInfo.username }}</span>
                     </div>
                 </div>
                 <div class="modifiable-info">
@@ -65,7 +61,6 @@
                         <div class="title">视频聊天</div>
                     </ButtonBox>
                 </div>
-            </template>
         </div>
     </div>
 </template>
@@ -76,19 +71,17 @@ import { useRoute, useRouter } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
 import { ref, computed, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { useReconnect } from '../assets/js/reconnectMixin'
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
 
 const currentFriendInfo = computed(() => {
-    const currentFriendInfo = chatStore.friends.find(friend => friend.id == route.params.friendId)
-    if (currentFriendInfo) {
-        return currentFriendInfo
-    } else {
-        return null
-    }
+    return chatStore.friendList.find(friend => friend.id == route.params.friendId)
+})
+
+const userInfo = computed(() => {
+    return chatStore.userInfoMap.get(currentFriendInfo.value.friendId)
 })
 
 const isModifyRemark = ref(false);

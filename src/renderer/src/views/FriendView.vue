@@ -5,7 +5,7 @@
                 <SideTopToolBar />
             </div>
             <div class="side-list-container">
-                <template v-if="chatStore.friends.length > 0">
+                <template v-if="chatStore.friendList.length > 0">
                     <div class="side-list-data">
                         <template v-for="[key, value] of friendMap" :key="value">
                             <div :id="'index-' + (key === '#' ? 'unknown' : key)" class="sort-title"> {{ key }} </div>
@@ -32,29 +32,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount } from "vue"
+import { ref, computed } from "vue"
 import { Plus } from '@element-plus/icons-vue'
 import FriendItem from '../components/FriendItem.vue'
 import { useChatStore } from '../store/chatStore'
 import sortListToMap from '../assets/js/sort-first-word'
 import SideTopToolBar from '../components/SideTopToolBar.vue'
-import { useReconnect } from '../assets/js/reconnectMixin'
 
 const chatStore = useChatStore()
 
 const english = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#']
 
-onBeforeMount(() => {
-    chatStore.getFriends()
-})
-
-useReconnect(() => {
-    chatStore.getFriends()
-})
-
 const friendMap = computed(() => {
-    if (!chatStore.friends) return []
-    const result = sortListToMap(chatStore.friends, item => item.userVo.name, item => item.remark)
+    if (!chatStore.friendList) return []
+    const result = sortListToMap(chatStore.friendList, item => chatStore.userInfoMap.get(item.friendId).name, item => item.remark)
     return result
 })
 
