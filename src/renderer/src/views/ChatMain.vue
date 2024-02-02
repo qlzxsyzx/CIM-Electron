@@ -63,18 +63,23 @@ import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { ElMessage } from 'element-plus';
 import { useReconnect } from '../assets/js/reconnectMixin';
+import { uploadImage, getByName } from '../api/image';
 
 const route = useRoute()
 const chatStore = useChatStore()
 const userStore = useUserStore()
 const isLoading = ref(true)
+const isTop = ref(false)
 const isBottom = ref(false)
 const isNeedScrollToBottom = ref(true)
+const pageNum = ref(2)
+const pageSize = ref(10)
+const isHasMore = ref(true)
 
 onActivated(() => {
     isLoading.value = true
     // 获取聊天记录
-    chatStore.getChatMessageList(route.params.roomId, 1, 5).then(res => {
+    chatStore.getChatMessageList(route.params.roomId).then(res => {
         if (res.code === 200) {
             isLoading.value = false
         }
@@ -88,7 +93,7 @@ onBeforeRouteUpdate((to, from, next) => {
     console.log('获取聊天室聊天记录', to.params.roomId)
     chatStore.recordCurrentChatInfo(to.params.roomId)
     // 获取聊天记录
-    chatStore.getChatMessageList(to.params.roomId, 1, 5).then(res => {
+    chatStore.getChatMessageList(to.params.roomId).then(res => {
         if (res.code === 200) {
             isLoading.value = false
         }
@@ -99,7 +104,7 @@ onBeforeRouteUpdate((to, from, next) => {
 useReconnect(() => {
     isLoading.value = true
     // 获取聊天记录
-    chatStore.getChatMessageList(route.params.roomId, 1, 5).then(res => {
+    chatStore.getChatMessageList(route.params.roomId).then(res => {
         if (res.code === 200) {
             nextTick(() => {
                 isLoading.value = false
@@ -134,6 +139,20 @@ watchPostEffect(() => {
     }
 })
 
+watchPostEffect(() => {
+    if (isTop.value && isHasMore.value) {
+        chatStore.getMoreChatMessages(route.params.roomId, pageNum.value, pageSize.value).then(res => {
+            if (res.code === 200) {
+                if (res.data.length < 10) {
+                    isHasMore.value = false
+                }
+                pageNum.value++
+                isTop.value = false
+            }
+        })
+    }
+})
+
 const firstOpenScroll = async () => {
     await nextTick()
     const el = document.getElementById('main-view-container')
@@ -147,13 +166,18 @@ const handleScroll = () => {
     const scrollHeight = el.scrollHeight;
     const scrollTop = el.scrollTop;
     const clientHeight = el.clientHeight;
-
     // 判断是否滚动到底部
     if (scrollTop + clientHeight >= scrollHeight - 30) {
         isBottom.value = true
     } else {
         isBottom.value = false
         isNeedScrollToBottom.value = false
+    }
+    // 判断是否滚动到顶部-50,滚到就获取更多消息
+    if (scrollTop <= 50) {
+        isTop.value = true
+    } else {
+        isTop.value = false
     }
 };
 
@@ -182,9 +206,13 @@ const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
 
+const fileUploadCallback = (info) => {
+    console.log(info)
+}
+
 const handleInputPaste = (e) => {
     e.preventDefault()
-    handlePaste(e)
+    handlePaste(e, fileUploadCallback)
     nextTick(() => {
         // 更新div的滚动位置，保持光标可见
         const div = inputArea.value
@@ -238,32 +266,100 @@ const handleCtrlEnter = (e) => {
     })
 }
 
-const handleSendMesage = () => {
+const imageRegex = /\[图片 src="(.*?)"]/g
+
+const imgSrctoFile = (src, filename) => {
+    // 将图片的src转换为file对象
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('GET', src, true)
+        xhr.responseType = 'blob'
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                const blob = xhr.response
+                const file = new File([blob], filename, { type: blob.type }) // 创建File对象
+                resolve(file)
+            } else {
+                reject(new Error('图片加载失败'))
+            }
+        }
+        xhr.send()
+    })
+}
+
+const handleSendMesage = async () => {
     const message = messageInput.value.innerHTML
-    console.log('发送消息', message)
-    console.log('encode', encodeHtmlToMessage(message))
     if (!message) return
-    // 发送消息, 先请求后端添加数据库，失败报错！
-    // 成功后端返回消息vo，前端保存，用于撤回
-    const createMessageDto = {
+    const encodeMessage = encodeHtmlToMessage(message)
+    // 发送消息，发送中
+    const sendingMessage = {
+        messageId: new Date().getTime(),
         roomId: route.params.roomId,
+        senderId: userStore.userInfo.userId,
         receiverId: friendUserInfo.value.userId,
         receiverType: 1,
         type: 1,
-        content: encodeHtmlToMessage(message),
+        sendStatus: 0,
+        content: encodeMessage,
+        recordId: null,
+        createTime: new Date()
+    }
+    chatStore.addCurrentChatHistory(sendingMessage)
+    // 对其中 [图片 src="data"]进行解析
+    let uploadImagePromises = []
+    let saveMessage = encodeMessage
+    let matches
+    while ((matches = imageRegex.exec(encodeMessage)) != null) {
+        const imageSrc = matches[1]
+        let promise = new Promise((resolve, reject) => {
+            imgSrctoFile(imageSrc, 'chat_' + Date.parse(new Date()) + '.png').then((file) => {
+                // 调用上传图片接口
+                const formData = new FormData()
+                formData.append('file', file)
+                uploadImage(formData).then((res) => {
+                    if (res.code === 200) {
+                        // 替换图片链接
+                        saveMessage = saveMessage.replace(imageSrc, getByName(res.data.fileName))
+                        console.log('图片上传成功', saveMessage)
+                        resolve('图片上传成功')
+                    } else {
+                        console.error('图片上传失败')
+                        sendingMessage.sendStatus = -1
+                        reject('图片上传失败')
+                    }
+                })
+            }).catch((error) => {
+                console.error('图片上传失败', error)
+                sendingMessage.sendStatus = -1
+            })
+        })
+        uploadImagePromises.push(promise)
+    }
+    await Promise.all(uploadImagePromises)
+    console.log('图片上传完成')
+    if (sendingMessage.sendStatus === -1) {
+        ElMessage.error('消息发送失败')
+        return
+    }
+    const createMessageDto = {
+        roomId: route.params.roomId,
+        senderId: userStore.userInfo.userId,
+        receiverId: friendUserInfo.value.userId,
+        receiverType: 1,
+        type: 1,
+        content: saveMessage,
         recordId: null
     }
-    chatStore.sendMessage(createMessageDto).then(res => {
+    chatStore.sendMessage(sendingMessage, createMessageDto).then(res => {
         if (res.code == 200) {
-            console.log('发送成功')
+            ElMessage.success('发送成功')
             scrollToBottom()
-        } else {
-            console.log(res.msg)
         }
     }
-    ).catch(err => ElMessage.error(err))
+    ).catch(err => ElMessage.error("发送失败"))
     // 清空输入框
     messageInput.value.innerHTML = ''
+    messageInput.value.focus()
 }
 
 // copy
@@ -372,6 +468,7 @@ function restoreSelection() {
 
 .message-input {
     margin: 0 10px;
+    min-height: 100%;
     outline: 0 !important;
     word-wrap: break-word;
     word-break: break-all;

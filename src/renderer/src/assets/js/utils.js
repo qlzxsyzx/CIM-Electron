@@ -7,16 +7,48 @@ const emojiMap = emojiList.reduce((acc, emoji) => {
 const emojiRegex = /\[(.*?)\]/g
 
 // 输入框复制文本事件回调
-export const handlePaste = (e) => {
+export const handlePaste = (e,fileUploadCallback) => {
   let clp = (e.originalEvent || e).clipboardData
+  console.log(clp.items[0])
+  // 处理items的文件类型资源
+  const isImage = handleFileItems(clp.items,fileUploadCallback)
+  if(isImage){
+    return
+  }
   const html = clp.getData('text/html')
   const html2 = html.substring(html.indexOf('-->') + 3, html.lastIndexOf('<!--'))
   const message = decodeMessageToHtml(encodeHtmlToMessage(html2))
   if(!message){
     document.execCommand('insertText', false, clp.getData('text/plain'))
   }else {
+    console.log(isImage)
     document.execCommand('insertHtml', false, message)
   }
+}
+
+const handleFileItems = (items,fileUploadCallback) => {
+  let isImage = false
+  // 是文件不是图片就回调fileUploadCallback
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].kind !== 'file') {
+      continue
+    }
+    if (items[i].type.indexOf('image') === -1) {
+      fileUploadCallback(items[i])
+    }
+    // 是图片就document insertHtml
+    if (items[i].type.indexOf('image') !== -1) {
+      isImage = true
+      const reader = new FileReader()
+      reader.readAsDataURL(items[i].getAsFile())
+      reader.onload = function (e) {
+        const base64 = e.target.result
+        const img = `<img src="${base64}" style="max-width: 250px; height: auto;" />`
+        document.execCommand('insertHtml', false, img)
+      }
+    }
+  }
+  return isImage
 }
 
 export const decodeMessageToHtml = (message) => {

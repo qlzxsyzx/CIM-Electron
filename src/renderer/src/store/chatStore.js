@@ -29,9 +29,9 @@ export const useChatStore = defineStore('chatStore', {
           const friendItemList = res.data
           this.friendList = friendItemList.map((item) => item.friend)
           // 向userInfoMap添加
-          friendItemList.forEach(element => {
+          friendItemList.forEach((element) => {
             this.userInfoMap.set(element.userInfo.userId, element.userInfo)
-          });
+          })
         }
       })
     },
@@ -42,7 +42,7 @@ export const useChatStore = defineStore('chatStore', {
           const groupItemList = res.data
           this.groupList = groupItemList.map((item) => item.group)
           // 向myGroupSettingMap添加
-          groupItemList.forEach(element => {
+          groupItemList.forEach((element) => {
             this.myGroupSettingMap.set(element.groupSetting.groupId, element.groupSetting)
           })
         }
@@ -65,21 +65,34 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
-    recordCurrentChatInfo(roomId){
-      this.currentChatInfo = this.recentChatList.find(item => item.recentChat.roomId == roomId).recentChat
+    recordCurrentChatInfo(roomId) {
+      this.currentChatInfo = this.recentChatList.find(
+        (item) => item.recentChat.roomId == roomId
+      ).recentChat
     },
     // 获取分页聊天记录
-    async getChatMessageList(roomId, pageNum, pageSize) {
-      const res = await getChatMessageList(roomId, pageNum, pageSize)
+    async getChatMessageList(roomId) {
+      const res = await getChatMessageList(roomId, 1, 10)
       if (res.code === 200) {
         this.currentChatHistory = res.data.reverse()
       }
       return res
     },
-    async sendMessage(data) {
+    async getMoreChatMessages(roomId, pageNum, pageSize) {
+      const res = await getChatMessageList(roomId, pageNum, pageSize)
+      if (res.code === 200) {
+        Array.prototype.unshift.apply(this.currentChatHistory, res.data.reverse());
+      }
+      return res
+    },
+    async sendMessage(sendingMessage,data) {
       const res = await sendMessage(data)
       if (res.code === 200) {
-        this.addCurrentChatHistory(res.data)
+        sendingMessage.messageId = res.data.messageId
+        sendingMessage.createTime = res.data.createTime
+        sendingMessage.sendStatus = 1
+        this.recentChatList.find((item) => item.recentChat.roomId == data.roomId).lastMessage =
+          res.data
       }
       return res
     },
@@ -94,7 +107,7 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
-    async createGroupChat(groupId){
+    async createGroupChat(groupId) {
       const res = await createGroupChat(groupId)
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
