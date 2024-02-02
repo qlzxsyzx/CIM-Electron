@@ -20,7 +20,7 @@
                 </div>
             </div>
             <div v-if="props.chatItem.lastMessage" class="item-data-recent-message">
-                {{ lastMessageContent }}
+                {{ filterLastMessageContent }}
             </div>
         </div>
     </div>
@@ -88,6 +88,10 @@ const lastMessageContent = computed(() => {
             }
         }
     }
+})
+
+const filterLastMessageContent = computed(() => {
+    return lastMessageContent.value.replace(/\[图片 src=".*?"]/g,'[图片]')
 })
 
 const lastMessageTime = computed(() => {

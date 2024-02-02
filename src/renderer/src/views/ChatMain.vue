@@ -64,6 +64,7 @@ import { useUserStore } from '../store/userStore';
 import { ElMessage } from 'element-plus';
 import { useReconnect } from '../assets/js/reconnectMixin';
 import { uploadImage, getByName } from '../api/image';
+import axios from 'axios'
 
 const route = useRoute()
 const chatStore = useChatStore()
@@ -312,6 +313,10 @@ const handleSendMesage = async () => {
     while ((matches = imageRegex.exec(encodeMessage)) != null) {
         const imageSrc = matches[1]
         let promise = new Promise((resolve, reject) => {
+            if(imageSrc.startsWith(import.meta.env.RENDERER_VITE_BASE_URL)){
+                // 服务器资源,不用上传
+                resolve('资源已存在')
+            }
             imgSrctoFile(imageSrc, 'chat_' + Date.parse(new Date()) + '.png').then((file) => {
                 // 调用上传图片接口
                 const formData = new FormData()
@@ -331,6 +336,7 @@ const handleSendMesage = async () => {
             }).catch((error) => {
                 console.error('图片上传失败', error)
                 sendingMessage.sendStatus = -1
+                reject('图片上传失败')
             })
         })
         uploadImagePromises.push(promise)
@@ -338,10 +344,10 @@ const handleSendMesage = async () => {
     await Promise.all(uploadImagePromises)
     console.log('图片上传完成')
     if (sendingMessage.sendStatus === -1) {
-        ElMessage.error('消息发送失败')
+        ElMessage.error('发送失败')
         return
-    }
-    const createMessageDto = {
+    }else {
+        const createMessageDto = {
         roomId: route.params.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: friendUserInfo.value.userId,
@@ -353,10 +359,11 @@ const handleSendMesage = async () => {
     chatStore.sendMessage(sendingMessage, createMessageDto).then(res => {
         if (res.code == 200) {
             ElMessage.success('发送成功')
-            scrollToBottom()
         }
     }
     ).catch(err => ElMessage.error("发送失败"))
+    }
+    scrollToBottom()
     // 清空输入框
     messageInput.value.innerHTML = ''
     messageInput.value.focus()

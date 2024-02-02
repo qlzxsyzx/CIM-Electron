@@ -2,7 +2,7 @@ import { uploadSmallFile,initUploadBigFile,uploadBigFilePart,mergeBigFile } from
 import { ElMessage } from 'element-plus';
 
 // 处理文件上传
-const SMALL_FILE_SIZE = 1024 * 1024; // 1MB
+const SMALL_FILE_SIZE = 1024 * 1024 * 10; // 10MB
 
 const DEFAULT_CHUNK_SIZE = 1024 * 1024 * 5; // 5MB
 

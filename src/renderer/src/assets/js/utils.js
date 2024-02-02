@@ -43,7 +43,7 @@ const handleFileItems = (items,fileUploadCallback) => {
       reader.readAsDataURL(items[i].getAsFile())
       reader.onload = function (e) {
         const base64 = e.target.result
-        const img = `<img src="${base64}" style="max-width: 250px; height: auto;" />`
+        const img = `<img src="${base64}" style="width: auto; height: 200px;" />`
         document.execCommand('insertHtml', false, img)
       }
     }
@@ -53,7 +53,7 @@ const handleFileItems = (items,fileUploadCallback) => {
 
 export const decodeMessageToHtml = (message) => {
   // 解码消息格式 text[图片 src='']text[表情]
-  const decodedMessage1 = message.replace(/\[图片 src="(.*?)"]/g, '<img src="$1" style="max-width: 250px; height: auto;" />')
+  const decodedMessage1 = message.replace(/\[图片 src="(.*?)"]/g, `<img src="$1" style="width: auto; height: 200px;" />`)
   // 将消息中的[笑]等格式的字符替换为emoji image
   const decodedMessage2 = decodedMessage1.replace(emojiRegex, (match, name) => {
     const emojiUrl = emojiMap.get(name)

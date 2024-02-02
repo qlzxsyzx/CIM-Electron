@@ -91,8 +91,10 @@ export const useChatStore = defineStore('chatStore', {
         sendingMessage.messageId = res.data.messageId
         sendingMessage.createTime = res.data.createTime
         sendingMessage.sendStatus = 1
-        this.recentChatList.find((item) => item.recentChat.roomId == data.roomId).lastMessage =
-          res.data
+        const chatItem = this.recentChatList.find((item) => item.recentChat.roomId == data.roomId)
+        this.recentChatList = this.recentChatList.filter((item) => item.recentChat.roomId != data.roomId)
+        chatItem.lastMessage = res.data
+        this.recentChatList.unshift(chatItem)
       }
       return res
     },
