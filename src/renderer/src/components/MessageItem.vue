@@ -18,11 +18,11 @@
                         </template>
                         <!-- 文件消息,实时显示上传下载进度，重试，取消，下载按钮，文件大小 -->
                         <template v-else-if="type === 'file'">
-                            <template v-if="props.position">
-                                <FileUploadMessage :fileInfo="props.info.fileInfo" />
+                            <template v-if="position === 'right'">
+                                <FileUploadMessage :messageInfo="props.messageInfo" />
                             </template>
                             <template v-else>
-                                <FileDownloadMessage :fileInfo="props.info.fileInfo" />
+                                <FileDownloadMessage :fileInfo="props.messageInfo.fileInfo" />
                             </template>
                         </template>
                     </div>
@@ -38,12 +38,18 @@ import FileUploadMessage from './FileUploadMessage.vue';
 import FileDownloadMessage from './FileDownloadMessage.vue';
 import { useUserStore } from '../store/userStore'
 import { useChatStore } from '../store/chatStore';
+import { useUserInfoStore } from '../store/userInfoStore';
+import { useFriendStore } from '../store/friendStore';
+import { useGroupStore } from '../store/groupStore';
 import { formatMessageDateTime } from '../assets/js/format'
 import { decodeMessageToHtml } from '../assets/js/utils';
 
 const props = defineProps(["messageInfo"])
 const userStore = useUserStore()
 const chatStore = useChatStore()
+const userInfoStore = useUserInfoStore()
+const friendStore = useFriendStore()
+const groupStore = useGroupStore()
 
 const currentChatInfo = computed(() => {
     return chatStore.currentChatInfo
@@ -54,7 +60,7 @@ const userInfo = computed(() => {
         //自己
         return userStore.userInfo
     } else {
-        return chatStore.userInfoMap.get(props.messageInfo.senderId)
+        return userInfoStore.getUserInfo(props.messageInfo.senderId)
     }
 })
 
@@ -65,17 +71,17 @@ const name = computed(() => {
             //自己
             return userInfo.value.name
         } else {
-            const friend = chatStore.friendList.find(item => item.friendId == currentChatInfo.value.toUserId)
+            const friend = friendStore.findFriendByUserId(currentChatInfo.value.toUserId)
             return friend.remark || userInfo.value.name
         }
     } else {
         // 群聊
-        const groupMember = chatStore.groupMemberList.find(item => item.userId == userInfo.value.userId && item.groupId == currentChatInfo.value.groupId)
+        const groupMember = groupStore.getMemberByGroupIdAndUserId(item => item.userId == userInfo.value.userId && item.groupId == currentChatInfo.value.groupId)
         if (props.messageInfo.senderId === userStore.userInfo.userId) {
             //自己
             return groupMember.userNickName || userInfo.value.name
         } else {
-            const friend = chatStore.friendList.find(item => item.friendId == userInfo.value.userId)
+            const friend = friendStore.findFriendByUserId(item => item.friendId == userInfo.value.userId)
             return friend.remark || groupMember.userNickName || userInfo.value.name
         }
     }
@@ -149,6 +155,7 @@ const type = computed(() => {
                 .msg-container {
                     display: block;
                     position: relative;
+                    min-height: 30px;
                     line-height: 30px;
                     margin-top: 3px;
                     padding: 7px 10px;

@@ -33,8 +33,11 @@ const handleFileItems = (items,fileUploadCallback) => {
     if (items[i].kind !== 'file') {
       continue
     }
+    if(items[i].type === ''){
+      continue
+    }
     if (items[i].type.indexOf('image') === -1) {
-      fileUploadCallback(items[i])
+      fileUploadCallback(items[i].getAsFile())
     }
     // 是图片就document insertHtml
     if (items[i].type.indexOf('image') !== -1) {

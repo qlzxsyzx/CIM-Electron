@@ -33,25 +33,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount } from "vue"
+import { ref, computed } from "vue"
 import { Plus } from '@element-plus/icons-vue'
 import GroupItem from '../components/GroupItem.vue'
-import { useChatStore } from '../store/chatStore'
+import { useGroupStore } from '../store/groupStore'
 import sortListToMap from '../assets/js/sort-first-word'
 import SideTopToolBar from '../components/SideTopToolBar.vue'
-import { useReconnect } from '../assets/js/reconnectMixin'
 
-useReconnect(() => {
-    chatStore.getGroupList()
-})
-
-const chatStore = useChatStore()
+const groupStore = useGroupStore()
 
 const english = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#']
 
 const groupMap = computed(() => {
     if (!chatStore.groupList) return []
-    const result = sortListToMap(chatStore.groupList, item => item.name, item => item.groupNickName)
+    const result = sortListToMap(groupStore.groupList, item => item.name, item => item.groupNickName)
     return result
 })
 

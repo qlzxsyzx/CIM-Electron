@@ -13,12 +13,15 @@
 import { ref,computed,watch } from 'vue';
 import FriendCheckBox from './FriendCheckBox.vue'
 import sortListToMap from '../assets/js/sort-first-word'
+import { useUserInfoStore } from '../store/userInfoStore'
+
+const userInfoStore = useUserInfoStore()
 
 const props = defineProps(['isSearch','friends', 'modelValue'])
 
 const friendMap = computed(() => {
     if (props.friends) {
-        return sortListToMap(props.friends, item => item.userVo.name, item => item.remark)
+        return sortListToMap(props.friends, item => userInfoStore.getUserInfo(item.friendId).name, item => item.remark)
     } else {
         return []
     }

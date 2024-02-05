@@ -5,47 +5,55 @@
                 <div class="top-name">
                     {{ friend.remark || friendUserInfo.name }}
                 </div>
-                <div class="top-more">
+                <div class="top-more" @click="moreOptionsVisible = !moreOptionsVisible">
                     <SvgIcon iconName="more" style="width: 25px;"></SvgIcon>
                 </div>
             </div>
-            <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
-                <template v-for="item in chatMessageList" :key="item.messageId">
-                    <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
-                </template>
-            </div>
-            <div class="main-footer-container">
-                <div class="tool-area">
-                    <div class="tool-area-left">
-                        <!-- emoji图标 -->
-                        <el-popover placement="top-end" trigger="click" width="450" v-model:visible="emojiVisible">
-                            <template #reference>
-                                <SvgIcon iconName="expression" iconClass="tool" style="outline: 0 !important;"></SvgIcon>
-                            </template>
-                            <Emoji @selectEmoji="selectEmoji" />
-                        </el-popover>
-                        <!-- 文件上传 -->
-                        <FileUpload accept-file-type="file">
-                            <template #trigger>
-                                <SvgIcon iconName="file" iconClass="tool"></SvgIcon>
-                            </template>
-                        </FileUpload>
-                        <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
-                        <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
-                        <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
-                    </div>
-                    <div class="tool-area-right">
-                        <SvgIcon iconName="call" iconClass="tool"></SvgIcon>
-                        <SvgIcon iconName="video" iconClass="tool"></SvgIcon>
-                    </div>
+            <div class="main-chat-container">
+                <!-- 单聊更多选项 -->
+                <el-drawer v-model="moreOptionsVisible" :with-header="false" size="300"
+                    style="background-color: #f0f2f5;">
+                    <SingleChatMoreOptions />
+                </el-drawer>
+                <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
+                    <template v-for="item in chatMessageList" :key="item.messageId">
+                        <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
+                    </template>
                 </div>
-                <div class="input-area" id="input-area" ref="inputArea">
-                    <div class="message-input" id="message-input" ref="messageInput" @paste="handleInputPaste"
-                        contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
-                        @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
-                </div>
-                <div class="control-area">
-                    <el-button type="primary" @click="handleSendMesage">发送</el-button>
+                <div class="main-footer-container">
+                    <div class="tool-area">
+                        <div class="tool-area-left">
+                            <!-- emoji图标 -->
+                            <el-popover placement="top-end" trigger="click" width="450" v-model:visible="emojiVisible">
+                                <template #reference>
+                                    <SvgIcon iconName="expression" iconClass="tool" style="outline: 0 !important;">
+                                    </SvgIcon>
+                                </template>
+                                <Emoji @selectEmoji="selectEmoji" />
+                            </el-popover>
+                            <!-- 文件上传 -->
+                            <FileUpload accept-file-type="file">
+                                <template #trigger>
+                                    <SvgIcon iconName="file" iconClass="tool"></SvgIcon>
+                                </template>
+                            </FileUpload>
+                            <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
+                            <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
+                            <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
+                        </div>
+                        <div class="tool-area-right">
+                            <SvgIcon iconName="call" iconClass="tool"></SvgIcon>
+                            <SvgIcon iconName="video" iconClass="tool"></SvgIcon>
+                        </div>
+                    </div>
+                    <div class="input-area" id="input-area" ref="inputArea">
+                        <div class="message-input" id="message-input" ref="messageInput" @paste="handleInputPaste"
+                            contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
+                            @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
+                    </div>
+                    <div class="control-area">
+                        <el-button type="primary" @click="handleSendMesage">发送</el-button>
+                    </div>
                 </div>
             </div>
         </template>
@@ -61,14 +69,18 @@ import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
+import { useFriendStore } from '../store/friendStore';
+import { useUserInfoStore } from '../store/userInfoStore';
 import { ElMessage } from 'element-plus';
 import { useReconnect } from '../assets/js/reconnectMixin';
 import { uploadImage, getByName } from '../api/image';
-import axios from 'axios'
+import SingleChatMoreOptions from '../components/SingleChatMoreOptions.vue';
 
 const route = useRoute()
 const chatStore = useChatStore()
 const userStore = useUserStore()
+const friendStore = useFriendStore()
+const userInfoStore = useUserInfoStore()
 const isLoading = ref(true)
 const isTop = ref(false)
 const isBottom = ref(false)
@@ -76,6 +88,7 @@ const isNeedScrollToBottom = ref(true)
 const pageNum = ref(2)
 const pageSize = ref(10)
 const isHasMore = ref(true)
+const moreOptionsVisible = ref(false)
 
 onActivated(() => {
     isLoading.value = true
@@ -115,11 +128,11 @@ useReconnect(() => {
 })
 
 const friend = computed(() => {
-    return chatStore.friendList.find(item => item.friendId === currentChatInfo.value.toUserId)
+    return friendStore.friendList.find(item => item.friendId === currentChatInfo.value.toUserId)
 })
 
 const friendUserInfo = computed(() => {
-    return chatStore.userInfoMap.get(currentChatInfo.value.toUserId)
+    return userInfoStore.getUserInfo(currentChatInfo.value.toUserId)
 })
 
 const currentChatInfo = computed(() => {
@@ -154,11 +167,12 @@ watchPostEffect(() => {
     }
 })
 
-const firstOpenScroll = async () => {
-    await nextTick()
-    const el = document.getElementById('main-view-container')
-    if (!el) return
-    el.scrollTop = el.scrollHeight
+const firstOpenScroll = () => {
+    nextTick(() => {
+        const el = document.getElementById('main-view-container')
+        if (!el) return
+        el.scrollTop = el.scrollHeight
+    })
 }
 
 const handleScroll = () => {
@@ -186,29 +200,35 @@ const scrollToBottom = async () => {
     await nextTick()
     const index = chatMessageList.value[chatMessageList.value.length - 1].messageId
     // 点击后scroll到index id位置
-    const el = document.querySelector(`#message-${index}`)
+    const el = document.getElementById(`message-${index}`)
     if (!el) return
     // scroll 到 el的位置
-    el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
-}
-
-const info = {
-    type: 'file',
-    fileInfo: {
-        fileName: 'test.pdf',
-        fileSize: '100KB',
-        fileType: 'pdf',
-        progress: 50,
-        status: 2
-    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
 }
 
 const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
 
-const fileUploadCallback = (info) => {
-    console.log(info)
+const fileUploadCallback = (file) => {
+    // 粘贴的是文件，创建文件发送消息
+    const sendingMessage = {
+        messageId: new Date().getTime(),
+        roomId: route.params.roomId,
+        senderId: userStore.userInfo.userId,
+        receiverId: friendUserInfo.value.userId,
+        receiverType: 1,
+        type: 3,
+        sendStatus: 0,
+        content: file.name,
+        createTime: new Date(),
+        file: file
+    }
+    chatStore.addCurrentChatHistory(sendingMessage)
+    nextTick(() => {
+        scrollToBottom()
+    })
+    messageInput.value.focus()
 }
 
 const handleInputPaste = (e) => {
@@ -313,7 +333,7 @@ const handleSendMesage = async () => {
     while ((matches = imageRegex.exec(encodeMessage)) != null) {
         const imageSrc = matches[1]
         let promise = new Promise((resolve, reject) => {
-            if(imageSrc.startsWith(import.meta.env.RENDERER_VITE_BASE_URL)){
+            if (imageSrc.startsWith(import.meta.env.RENDERER_VITE_BASE_URL)) {
                 // 服务器资源,不用上传
                 resolve('资源已存在')
             }
@@ -346,22 +366,22 @@ const handleSendMesage = async () => {
     if (sendingMessage.sendStatus === -1) {
         ElMessage.error('发送失败')
         return
-    }else {
+    } else {
         const createMessageDto = {
-        roomId: route.params.roomId,
-        senderId: userStore.userInfo.userId,
-        receiverId: friendUserInfo.value.userId,
-        receiverType: 1,
-        type: 1,
-        content: saveMessage,
-        recordId: null
-    }
-    chatStore.sendMessage(sendingMessage, createMessageDto).then(res => {
-        if (res.code == 200) {
-            ElMessage.success('发送成功')
+            roomId: route.params.roomId,
+            senderId: userStore.userInfo.userId,
+            receiverId: friendUserInfo.value.userId,
+            receiverType: 1,
+            type: 1,
+            content: saveMessage,
+            recordId: null
         }
-    }
-    ).catch(err => ElMessage.error("发送失败"))
+        chatStore.sendMessage(sendingMessage, createMessageDto).then(res => {
+            if (res.code == 200) {
+                ElMessage.success('发送成功')
+            }
+        }
+        ).catch(err => ElMessage.error("发送失败"))
     }
     scrollToBottom()
     // 清空输入框
@@ -414,83 +434,96 @@ function restoreSelection() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .main-container {
     width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
-}
 
-.main-top-container {
-    padding: 0 30px;
-    min-height: 100px;
-    border-bottom: 1px solid var(--el-color-info-light-5);
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-}
+    .main-top-container {
+        padding: 0 30px;
+        min-height: 100px;
+        border-bottom: 1px solid var(--el-color-info-light-5);
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
 
-.main-view-container {
-    flex: 1;
-    width: 100%;
-    overflow-y: auto;
-    margin-bottom: 10px;
-    min-height: 400px;
-}
+        .top-name {
+            font-size: 20px;
+            font-weight: 500;
+            color: black;
+        }
 
-.main-footer-container {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 400px;
-    border-top: 1px solid var(--el-color-info-light-5);
-}
+        .top-more {
+            cursor: pointer;
+        }
+    }
 
-.top-name {
-    font-size: 20px;
-    font-weight: 500;
-    color: black;
-}
+    .main-chat-container {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        position: relative;
 
-.top-more {
-    cursor: pointer;
-}
+        :deep(.el-overlay) {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0);
+        }
 
-.tool-area {
-    height: 26px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    margin: 5px 0;
-}
+        .main-view-container {
+            flex: 1;
+            width: 100%;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            min-height: 400px;
+        }
 
-.input-area {
-    width: 100%;
-    flex: 1;
-    overflow: auto;
-    cursor: text;
-}
+        .main-footer-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            border-top: 1px solid var(--el-color-info-light-5);
 
-.message-input {
-    margin: 0 10px;
-    min-height: 100%;
-    outline: 0 !important;
-    word-wrap: break-word;
-    word-break: break-all;
-    line-height: 25px;
-}
+            .tool-area {
+                height: 26px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                margin: 5px 0;
 
-.control-area {
-    height: 40px;
-    padding: 10px;
-    text-align: right;
-}
 
-.tool-area-left {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
+                .tool-area-left {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: flex-start;
+                }
+            }
+
+            .input-area {
+                width: 100%;
+                flex: 1;
+                overflow: auto;
+                cursor: text;
+
+                .message-input {
+                    margin: 0 10px;
+                    min-height: 100%;
+                    outline: 0 !important;
+                    word-wrap: break-word;
+                    word-break: break-all;
+                    line-height: 25px;
+                }
+            }
+
+            .control-area {
+                height: 40px;
+                padding: 10px;
+                text-align: right;
+            }
+        }
+    }
 }
 </style>

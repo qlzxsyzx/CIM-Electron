@@ -29,8 +29,8 @@
                                 <el-icon size="20px" class="mark" @click="handleRemoveFriend(friend)">
                                     <CircleCloseFilled />
                                 </el-icon>
-                                <el-avatar :size="60" :src="friend.userVo.avatarUrl"></el-avatar>
-                                <span class="name">{{ friend.remark ? friend.remark : friend.userVo.name }}</span>
+                                <el-avatar :size="60" :src="getUserInfo(friend.friendId).avatarUrl"></el-avatar>
+                                <span class="name">{{ getFriendName(friend) }}</span>
                             </div>
                         </template>
                     </div>
@@ -47,7 +47,9 @@
 
 <script setup>
 import { CircleCloseFilled } from '@element-plus/icons-vue'
-import { useChatStore } from '../store/chatStore'
+import { useGroupStore } from '../store/groupStore'
+import { useFriendStore } from '../store/friendStore'
+import { useUserInfoStore } from '../store/userInfoStore'
 import FriendCheckBoxGroup from '../components/FriendCheckBoxGroup.vue'
 import CropperAvatar from '../components/CropperAvatar.vue'
 import { ref, computed, reactive } from 'vue'
@@ -59,19 +61,32 @@ import { useRouter } from 'vue-router'
 
 const emit = defineEmits(['update:modelValue'])
 
-const chatStore = useChatStore()
+const groupStore = useGroupStore()
+const friendStore = useFriendStore()
+const userInfoStore = useUserInfoStore()
 const router = useRouter()
 
 const searchKey = ref('')
 
 const friends = computed(() => {
     if (searchKey.value) {
-        return chatStore.friends.filter(item => item.remark.includes(searchKey.value) || item.userVo.name.includes(searchKey.value))
+        return friendStore.friendList.filter(item => item.remark.includes(searchKey.value) || getUserInfo(item.friendId).name.includes(searchKey.value))
     } else {
-        return chatStore.friends
+        return friendStore.friendList
+    }
+})
+
+const getUserInfo = (userId) => {
+    return userInfoStore.getUserInfo(userId)
+}
+
+const getFriendName = (item) => {
+    if(item.remark) {
+        return item.remark
+    }else {
+        return getUserInfo(item.friendId).name
     }
 }
-)
 
 // 创建群组表单
 const createGroupForm = reactive({
@@ -134,7 +149,7 @@ const handleClickCreateGroupChat = () => {
                 name: createGroupForm.name,
                 memberList: chooseFriends.value.map(item => item.userVo.userId)
             }
-            chatStore.createGroup(createGroupData).then(res => {
+            groupStore.createGroup(createGroupData).then(res => {
                 if (res.code === 200) {
                     isLoad.value = false
                     ElMessage({
@@ -170,7 +185,7 @@ const handleClickCreateGroupChat = () => {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    height: 600px;
+    height: 400px;
     width: 100%;
 
     .container-left {
@@ -232,7 +247,7 @@ const handleClickCreateGroupChat = () => {
                 justify-content: space-between;
                 align-items: center;
                 padding: 0 10px;
-                height: 50px;
+                height: 20px;
 
                 .title {
                     font-weight: 600;
@@ -249,7 +264,8 @@ const handleClickCreateGroupChat = () => {
 
             .content {
                 overflow-y: auto;
-                height: 350px;
+                height: 200px;
+                margin-bottom: 10px;
 
                 .friend-container {
                     overflow-y: auto;

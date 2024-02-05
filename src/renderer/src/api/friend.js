@@ -43,3 +43,17 @@ export function refuseAddFriend(applyFriendMessageId){
         method:'post',
     })
 }
+
+export function blockFriend(friendId){
+    return request({
+        url:'/im-web/friend/blockFriend/' + friendId,
+        method:'post',
+    })
+}
+
+export function removeFriend(friendId){
+    return request({
+        url:'/im-web/friend/removeFriend/' + friendId,
+        method:'post',
+    })
+}

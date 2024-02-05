@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import { getFriendList } from '../api/friend'
 import {
   recentChatList,
   createSingleChat,
@@ -7,47 +6,16 @@ import {
   sendMessage,
   getChatMessageList
 } from '../api/chat'
-import { getGroupList, createGroup } from '../api/group'
 
 export const useChatStore = defineStore('chatStore', {
   state: () => {
     return {
-      friendList: [], // 好友列表
-      groupList: [], // 群组列表
       recentChatList: [], // 最近聊天列表
-      userInfoMap: new Map(), // 用户信息列表 key:userId
-      myGroupSettingMap: new Map(), // 我的群组设置 key:groupId
-      groupMemberList: [], // 群成员列表
       currentChatInfo: {}, // 当前聊天信息
       currentChatHistory: [] // 当前聊天记录
     }
   },
   actions: {
-    getFriendList() {
-      getFriendList().then((res) => {
-        if (res.code === 200) {
-          const friendItemList = res.data
-          this.friendList = friendItemList.map((item) => item.friend)
-          // 向userInfoMap添加
-          friendItemList.forEach((element) => {
-            this.userInfoMap.set(element.userInfo.userId, element.userInfo)
-          })
-        }
-      })
-    },
-    getGroupList() {
-      getGroupList().then((res) => {
-        if (res.code === 200) {
-          // group,groupSetting
-          const groupItemList = res.data
-          this.groupList = groupItemList.map((item) => item.group)
-          // 向myGroupSettingMap添加
-          groupItemList.forEach((element) => {
-            this.myGroupSettingMap.set(element.groupSetting.groupId, element.groupSetting)
-          })
-        }
-      })
-    },
     async getRecentChatList() {
       const res = await recentChatList()
       if (res.code === 200) {
@@ -56,14 +24,8 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
-    // 创建群组
-    async createGroup(createGroupData) {
-      const res = await createGroup(createGroupData)
-      if (res.code === 200) {
-        this.groupList.push(res.data.groupVo)
-        this.recentChatList.push(res.data)
-      }
-      return res
+    findRecentChatByRoomId(roomId) {
+      return this.recentChatList.find((item) => item.recentChat.roomId == roomId)
     },
     recordCurrentChatInfo(roomId) {
       this.currentChatInfo = this.recentChatList.find(
@@ -81,18 +43,20 @@ export const useChatStore = defineStore('chatStore', {
     async getMoreChatMessages(roomId, pageNum, pageSize) {
       const res = await getChatMessageList(roomId, pageNum, pageSize)
       if (res.code === 200) {
-        Array.prototype.unshift.apply(this.currentChatHistory, res.data.reverse());
+        Array.prototype.unshift.apply(this.currentChatHistory, res.data.reverse())
       }
       return res
     },
-    async sendMessage(sendingMessage,data) {
+    async sendMessage(sendingMessage, data) {
       const res = await sendMessage(data)
       if (res.code === 200) {
         sendingMessage.messageId = res.data.messageId
         sendingMessage.createTime = res.data.createTime
         sendingMessage.sendStatus = 1
         const chatItem = this.recentChatList.find((item) => item.recentChat.roomId == data.roomId)
-        this.recentChatList = this.recentChatList.filter((item) => item.recentChat.roomId != data.roomId)
+        this.recentChatList = this.recentChatList.filter(
+          (item) => item.recentChat.roomId != data.roomId
+        )
         chatItem.lastMessage = res.data
         this.recentChatList.unshift(chatItem)
       }

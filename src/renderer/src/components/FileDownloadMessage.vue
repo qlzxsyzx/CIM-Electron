@@ -7,30 +7,28 @@
             <div class="file-status">
                 <div class="file-info">
                     <div class="file-name">
-                        {{ props.fileInfo.fileName }}
+                        {{ fileInfo.fileName }}
                     </div>
                     <div class="file-size">
-                        {{ props.fileInfo.fileSize }}
+                        {{ formatFileSize(fileInfo.fileSize) }}
                     </div>
                 </div>
                 <div class="file-tip">
-                    <template v-if="props.fileInfo.status === 0">
-                        <el-progress style="width: 100%;margin-bottom: 10px;" :percentage="props.fileInfo.progress" striped striped-flow :show-text="false"></el-progress>
+                    <template v-if="fileInfo.status === 0">
+                        <el-progress style="width: 100%;margin-bottom: 10px;" :percentage="props.fileInfo.progress" striped
+                            striped-flow :show-text="false"></el-progress>
                     </template>
-                    <template v-else-if="props.fileInfo.status === 1">
+                    <template v-else-if="fileInfo.status === 1">
                         <el-icon color="#95d475" size="20px" class="file-mark">
                             <CircleCheckFilled />
                         </el-icon>
                         下载成功
                     </template>
-                    <template v-else-if="props.fileInfo.status === 2">
+                    <template v-else-if="fileInfo.status === 2">
                         <el-icon color="#F56C6C" size="20px" class="file-mark">
                             <CircleCloseFilled />
                         </el-icon>
                         下载失败
-                    </template>
-                    <template v-else-if="props.fileInfo.status === -1">
-                        待接收
                     </template>
                 </div>
             </div>
@@ -46,7 +44,7 @@
                     <a class="file-operation-item ">重新下载</a>
                 </template>
                 <template v-else-if="props.fileInfo.status === 2 | -1">
-                    <a class="file-operation-item ">下载</a>
+                    <a class="file-operation-item " @click="handleDownload">下载</a>
                     <a class="file-operation-item ">另存为</a>
                 </template>
             </div>
@@ -55,22 +53,51 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
+import { formatFileSize } from '../assets/js/format';
+import { fileDownlaodWithProgress } from '../assets/js/file-download'
 
 const props = defineProps(['fileInfo'])
+const fileState = reactive({
+    progress: 0,
+    status: -1
+})
+
+const fileInfo = computed(() => {
+    return {
+        fileName: props.fileInfo.realName,
+        fileSize: props.fileInfo.fileSize,
+        fileType: props.fileInfo.ext,
+        status: fileState.status,
+        progress: fileState.progress
+    }
+})
+
+const progressCallback = (progress) => {
+    fileState.progress = progress
+}
+
+const resultCallback = (result) => {
+    result === 'success' ? fileState.status = 1 : fileState.status = 2
+}
+
+const handleDownload = () => {
+    fileState.status = 0
+    fileDownlaodWithProgress(props.fileInfo.recordId, fileInfo.value.fileName, fileInfo.value.fileSize, progressCallback, resultCallback)
+}
 
 const icon = computed(() => {
-    const fileType = props.fileInfo.fileType.toLowerCase();
+    const fileType = fileInfo.value.fileType.toLowerCase();
     switch (fileType) {
         case 'doc':
-            case 'docx':
+        case 'docx':
             return 'file_word'
         case 'xls':
-            case 'xlsx':
+        case 'xlsx':
             return 'file_excel'
         case 'ppt':
-            case 'pptx':
-                case 'pptm':
+        case 'pptx':
+        case 'pptm':
             return 'file_ppt'
         case 'pdf':
             return 'file_pdf'
@@ -110,11 +137,11 @@ const icon = computed(() => {
         case 'msi':
         case 'bat':
         case 'cmd':
-        return 'file_exe'
+            return 'file_exe'
         case 'html':
-        return 'file_html'
+            return 'file_html'
         case 'cad':
-        return 'file_cad'
+            return 'file_cad'
         case 'js':
         case 'css':
         case 'json':
@@ -131,52 +158,60 @@ const icon = computed(() => {
 <style lang="scss" scoped>
 // 文件消息样式
 .chat-msg-file-container {
-    min-width: 300px;
-    min-height: 100px;
+    width: 300px;
+    height: 100px;
     border-radius: 10px;
     display: flex;
     background-color: #fff;
     padding: 10px;
     flex-direction: column;
     color: #000;
+
     .file-top {
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
         border-bottom: 1px solid #ccc;
         padding-bottom: 10px;
-        .file-icon{
+
+        .file-icon {
             width: 60px;
             height: 60px;
             margin-right: 10px;
+
             .icon {
                 width: 100%;
                 height: 100%;
             }
         }
+
         .file-status {
             display: flex;
             flex-direction: column;
             flex-wrap: nowrap;
             justify-content: space-between;
+
             .file-info {
                 display: flex;
                 flex-direction: row;
+
                 // 字多显示省略号
                 .file-name {
-                    width: 180px;
-                    font-size: 16px;
+                    width: 160px;
+                    font-size: 14px;
                     font-weight: 600;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                     word-wrap: break-word;
                 }
+
                 .file-size {
                     font-size: 14px;
                     color: #999;
                 }
             }
+
             .file-tip {
                 width: 100%;
                 display: flex;
@@ -187,17 +222,21 @@ const icon = computed(() => {
             }
         }
     }
+
     .file-bottom {
         display: flex;
         flex-direction: row;
         justify-content: flex-end;
-        .file-operation{
+
+        .file-operation {
             display: flex;
             flex-direction: row;
+
             .file-operation-item {
                 margin-right: 10px;
                 color: #66b1ff;
                 cursor: pointer;
+
                 &:hover {
                     color: #4090EF;
                 }
@@ -205,5 +244,4 @@ const icon = computed(() => {
         }
     }
 }
-
 </style>

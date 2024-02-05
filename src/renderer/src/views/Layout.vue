@@ -16,6 +16,8 @@ import MenuBar from '../components/MenuBar.vue';
 import { ref, onBeforeMount, computed } from 'vue';
 import { useUserStore } from '../store/userStore';
 import { useChatStore } from '../store/chatStore';
+import { useFriendStore } from '../store/friendStore';
+import { useGroupStore } from '../store/groupStore'
 import { createWS } from '../assets/js/ws';
 import { ElMessage } from 'element-plus';
 import { getPlatform } from '../assets/js/platform';
@@ -25,13 +27,15 @@ import { useReconnect } from '../assets/js/reconnectMixin'
 
 const userStore = useUserStore();
 const chatStore = useChatStore();
+const friendStore = useFriendStore();
+const groupStore = useGroupStore()
 const route = useRoute();
 
 const recentChatList = computed(() => chatStore.recentChatList);
 
 useReconnect(() => {
     userStore.getUserInfo()
-    chatStore.getFriendList()
+    friendStore.getFriendList()
 })
 
 // ws收到消息的回调，todo:先做简单的，
@@ -121,9 +125,9 @@ onBeforeMount(() => {
         })
     }
     // 获取好友
-    chatStore.getFriendList()
+    friendStore.getFriendList()
     // 获取群组
-    chatStore.getGroupList()
+    groupStore.getGroupList()
     // 获取最近会话
     chatStore.getRecentChatList().then((res) => {
         if (res.code === 200) {

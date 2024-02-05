@@ -1,8 +1,16 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  download: (res, fileName) => {
+    return ipcRenderer.invoke('download', res, fileName)
+  },
+  mergeFile: (fileName, recordName, count) => {
+    return ipcRenderer.invoke('mergeFile', fileName, recordName, count)
+  }
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

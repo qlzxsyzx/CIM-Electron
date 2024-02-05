@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { useUserStore } from '../../store/userStore'
-import { ElLoading } from 'element-plus'
 
 axios.defaults.withCredentials = true
 
@@ -10,18 +9,11 @@ const service = axios.create({
   timeout: 10000 // 设置默认的 timeout
 })
 
-let fullScreenLoading = null
-
 // request interceptor
 service.interceptors.request.use(
   (config) => {
     const userStore = useUserStore()
     userStore.reqCount++
-    fullScreenLoading = ElLoading.service({
-      lock: true,
-      text: '请求中',
-      background: 'rgba(0, 0, 0, 0.2)'
-  })
     // Do something before request is sent
     // token设置在cookie,由后端操控
     return config
@@ -38,9 +30,6 @@ service.interceptors.response.use(
   (response) => {
     const userStore = useUserStore()
     userStore.reqCount--
-    if(userStore.reqCount === 0){
-      fullScreenLoading.close()
-    }
     // 没有权限
     if (response.status === 403) {
       ElMessage.warning('没有权限')
@@ -75,9 +64,6 @@ service.interceptors.response.use(
   (error) => {
     const userStore = useUserStore()
     userStore.reqCount--
-    if(userStore.reqCount === 0){
-      fullScreenLoading.close()
-    }
     console.error('Error in response:', error)
     return Promise.reject(error)
   }

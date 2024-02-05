@@ -69,19 +69,23 @@
 import ButtonBox from '../components/ButtonBox.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
+import { useFriendStore } from '../store/friendStore';
+import { useUserInfoStore } from '../store/userInfoStore';
 import { ref, computed, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
+const friendStore = useFriendStore();
+const userInfoStore = useUserInfoStore();
 
 const currentFriendInfo = computed(() => {
-    return chatStore.friendList.find(friend => friend.id == route.params.friendId)
+    return friendStore.findFriendById(route.params.friendId)
 })
 
 const userInfo = computed(() => {
-    return chatStore.userInfoMap.get(currentFriendInfo.value.friendId)
+    return userInfoStore.getUserInfo(currentFriendInfo.value.friendId)
 })
 
 const isModifyRemark = ref(false);
@@ -102,7 +106,7 @@ const handleModifyRemark = () => {
 const handleClickMessage = (friend) => {
     console.log('handleClickMessage', friend.roomId)
     // 判断会话是否存在
-    const chat = chatStore.recentChatList.find(chat => chat.roomId == friend.roomId);
+    const chat = chatStore.findRecentChatByRoomId(friend.roomId);
     if (chat) {
         router.push('/chat/single/' + friend.roomId)
     } else {

@@ -1,15 +1,31 @@
 <template>
     <div class="friend-check-box-container" @click="handleClick">
         <input class="friend-check-box" type="checkbox" :checked="props.checked" />
-        <el-avatar class="friend-check-box-avatar" :size="50" :src="props.friend.userVo.avatarUrl" />
-        <span class="friend-check-box-name">{{ props.friend.remark ? props.friend.remark : props.friend.userVo.name}}</span>
+        <el-avatar class="friend-check-box-avatar" :size="50" :src="userInfo.avatarUrl" />
+        <span class="friend-check-box-name">{{ name }}</span>
     </div>
 </template>
 
 <script setup>
+import { useUserInfoStore } from '../store/userInfoStore'
+import { computed } from 'vue'
+
 const props = defineProps(['friend','checked'])
+const userInfoStore = useUserInfoStore()
 
 const emit = defineEmits(['check'])
+
+const userInfo = computed(() => {
+    return userInfoStore.getUserInfo(props.friend.friendId)
+})
+
+const name = computed(() => {
+    if(props.friend.remark) {
+        return props.friend.remark
+    }else {
+        return userInfo.value.name
+    }
+})
 
 const handleClick = () => {
     emit('check', props.friend)

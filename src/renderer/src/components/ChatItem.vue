@@ -30,15 +30,19 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router';
 import { formatLocalDateTimeToText } from '../assets/js/format'
 import { useChatStore } from '../store/chatStore';
+import { useUserInfoStore } from '../store/userInfoStore'
+import { useFriendStore } from '../store/friendStore'
 
 const route = useRoute()
 const props = defineProps(["chatItem"])
 const chatStore = useChatStore()
+const userInfoStore = useUserInfoStore()
+const friendStore = useFriendStore()
 
 const chatInfo = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
         // 私聊
-        return chatStore.userInfoMap.get(props.chatItem.recentChat.toUserId)
+        return userInfoStore.getUserInfo(props.chatItem.recentChat.toUserId)
     } else {
         // 群聊
         return chatStore.groupList.find(item => item.id == props.chatItem.recentChat.groupId)
@@ -52,7 +56,7 @@ const avatarUrl = computed(() => {
 const name = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
         // 私聊
-        const friend = chatStore.friendList.find(item => item.friendId == props.chatItem.recentChat.toUserId)
+        const friend = friendStore.findFriendByUserId(props.chatItem.recentChat.toUserId)
         return friend.remark || chatInfo.value.name
     } else {
         // 群聊
@@ -65,7 +69,7 @@ const name = computed(() => {
 })
 
 const isClick = computed(() => {
-    return route.params.roomId == props.chatItem.recentChat.roomId
+    return route.params.roomId === props.chatItem.recentChat.roomId
 })
 
 const lastMessageContent = computed(() => {
@@ -78,11 +82,11 @@ const lastMessageContent = computed(() => {
         if (sender === null) {
             return '我：' + props.chatItem.lastMessage.content
         } else {
-            const friend = chatStore.friendList.find(item => item.friendId == sender.userInfo.userId)
+            const friend = friendStore.findFriendByUserId(sender.userInfo.userId)
             if (friend === null) {
                 // 不是好友
                 return sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
-            }else {
+            } else {
                 // 是好友
                 return friend.remark || sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
             }
@@ -91,7 +95,7 @@ const lastMessageContent = computed(() => {
 })
 
 const filterLastMessageContent = computed(() => {
-    return lastMessageContent.value.replace(/\[图片 src=".*?"]/g,'[图片]')
+    return lastMessageContent.value.replace(/\[图片 src=".*?"]/g, '[图片]')
 })
 
 const lastMessageTime = computed(() => {

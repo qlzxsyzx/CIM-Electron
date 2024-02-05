@@ -13,9 +13,9 @@
 <script setup>
 import {ref,computed} from 'vue'
 import { useRouter,useRoute } from 'vue-router';
-import { useChatStore } from '../store/chatStore'
+import { useUserInfoStore } from '../store/userInfoStore'
 
-const chatStore = useChatStore()
+const userInfoStore = useUserInfoStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -26,7 +26,7 @@ const isClick = computed(() =>{
 })
 
 const userInfo = computed(() => {
-    return chatStore.userInfoMap.get(props.friend.friendId)
+    return userInfoStore.getUserInfo(props.friend.friendId)
 })
 
 const openFriendInfo =() => {
