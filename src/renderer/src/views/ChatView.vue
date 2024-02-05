@@ -17,9 +17,7 @@
         </div>
         <div class="chat-main-container">
             <router-view v-slot="{ Component }">
-                    <KeepAlive>
-                        <component :is="Component" />
-                    </KeepAlive>
+                <component :is="Component" />
             </router-view>
         </div>
     </div>

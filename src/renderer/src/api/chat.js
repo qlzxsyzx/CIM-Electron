@@ -35,3 +35,10 @@ export function sendMessage(createMessageDto){
         data:createMessageDto
     })
 }
+
+export function topChat(id,status){
+    return request({
+        url:'/im-web/chat/topChat/' + id + "/" + status,
+        method:'post'
+    })
+}

@@ -58,13 +58,14 @@
             </div>
         </template>
     </div>
+    <div class="el-overlay" v-show="moreOptionsVisible" style="opacity: 0;" @click="moreOptionsVisible = false"></div>
 </template>
 
 <script setup>
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
 import { handlePaste, encodeHtmlToMessage, decodeMessageToHtml } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect, onActivated } from 'vue'
+import { ref, computed, nextTick, watchPostEffect, onActivated,onMounted,onBeforeMount } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';

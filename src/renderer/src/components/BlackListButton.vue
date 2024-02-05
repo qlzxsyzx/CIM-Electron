@@ -1,124 +1,98 @@
 <template>
-    <div class="tool-container" @click="handleOpenSearchFirend">
+    <div class="tool-container" @click="openBlackListDialog">
         <SvgIcon iconName="bg-black-list" class="tool-icon" />
         <div class="tool-name">黑名单</div>
     </div>
 
-    <!-- 添加好友dialog -->
-    <el-dialog v-model="searchFriendDialog.visible" title="添加好友" width="30%" align-center @closed="closeSearchFriendDialog">
-        <!-- 搜索好友框 -->
-        <el-input v-model="searchFriendDialog.username" placeholder="输入账号搜索..." size="large" @keyup.enter="handleSearchUser">
+    <!-- 黑名单dialog -->
+    <el-dialog v-model="blackListDialog.visible" title="黑名单" width="40%" align-center
+        @closed="blackListDialog.visible = false" destroy-on-close>
+        <!-- 搜索框 -->
+        <el-input v-model="blackListDialog.keyword" placeholder="输入账号搜索..." size="large" @keyup.enter="handleSearchUser">
             <template #append>
                 <el-button :icon="Search" class="append-button" @click="handleSearchUser" />
             </template>
         </el-input>
         <!-- 用户展示 -->
-        <div class="search-result-container">
-            <template v-if="searchFriendDialog.result">
-                <div class="search-result">
-                    <el-avatar :size="60" :src="searchFriendDialog.result.avatarUrl" />
-                    <div class="search-result-info">
-                        <span class="info-name"> {{ searchFriendDialog.result.name }} </span>
-                        <span class="info-username">账号： {{ searchFriendDialog.result.username }}</span>
-                    </div>
-                    <!-- todo:可以从store查询是否已是好友，而提示 -->
-                    <div class="search-result-operation">
-                        <el-button type="primary" @click="handleOpenAddFirend">添加</el-button>
-                    </div>
-                </div>
+        <div class="black-list-container">
+            <template v-if="blackListDialog.result.length > 0">
+                <el-table :data="blackListDialog.result" style="width: 100%" show-overflow-tooltip>
+                    <el-table-column label="昵称" width="150">
+                        <template #default="{ row }">
+                            <div class="avatar-name">
+                                <el-avatar :size="40" :src="row.userInfo.avatarUrl" />
+                                <span class="name">{{ row.userInfo.name }}</span>
+                            </div>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="备注" prop="remark" />
+                    <el-table-column label="拉黑时间">
+                        <template #default="{ row }">{{ formatDate(row.createTime) }}</template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="80">
+                        <template #default="{ row }">
+                            <el-button type="danger" size="small" @click="handleRemoveBlackList(row)">移除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
             </template>
-            <template v-else-if="!searchFriendDialog.isFirstSearch">
-                <p>未找到用户</p>
+            <template v-else>
+                <el-empty description="未找到相关用户" />
             </template>
         </div>
-        <!-- 添加好友对话框 -->
-        <el-dialog v-model="searchFriendDialog.addFriendDialogVisible" title="添加好友" width="20%" append-to-body align-center>
-            <div class="user-info-container">
-                <el-avatar :size="60" :src="searchFriendDialog.result.avatarUrl" />
-                <div class="user-info">
-                    <span class="info-name"> {{ searchFriendDialog.result.name }} </span>
-                    <span class="info-username">账号： {{ searchFriendDialog.result.username }}</span>
-                </div>
-            </div>
-            <p>备注：</p>
-            <el-input v-model="searchFriendDialog.addFriendForm.remark" placeholder="请输入备注..." />
-            <p>请输入添加理由：</p>
-            <el-input type="textarea" :autosize="{ minRows: 2, maxRows: 4 }" maxlength="30" show-word-limit  v-model="searchFriendDialog.addFriendForm.reason" placeholder="请输入添加理由..." />
-            <template #footer>
-                <el-button @click="searchFriendDialog.addFriendDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="handleAddFriend">确定</el-button>
-            </template>
-        </el-dialog>
     </el-dialog>
 </template>
 
 <script setup>
 import { Search } from '@element-plus/icons-vue';
 import { ref, reactive } from 'vue';
-import { searchByUsername } from '../api/friend'
 import { ElMessage } from 'element-plus';
-import { validUsername } from '../assets/js/regex-validate';
-import { useUserStore } from '../store/userStore';
+import { getBlackList, removeBlackList } from '../api/friend'
+import { formatDate } from '../assets/js/format'
 
-const userStore = useUserStore()
+const wholeResult = ref([])
 
-const searchFriendDialog = reactive({
+const blackListDialog = reactive({
     visible: false,
-    username: '',
-    result: {
-        avatarUrl: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-        username: '123456',
-        name: '张三'
-    },
-    isFirstSearch: true,
-    addFriendDialogVisible: false,
-    addFriendForm: {
-        remark: '', 
-        reason: ''
-    }
+    keyword: '',
+    result: []
 })
 
-const handleOpenSearchFirend = () => {
-    searchFriendDialog.visible = true;
-}
-
-const handleSearchUser = () => {
-    // 校验username
-    if (!validUsername(searchFriendDialog.username)) {
-        ElMessage.error('账号只能由数字字母构成且长度为4-10');
-        return;
-    }
-    searchFriendDialog.isFirstSearch = false;
-    // 发送搜索请求
-    searchByUsername(searchFriendDialog.username).then(res => {
+const openBlackListDialog = () => {
+    blackListDialog.visible = true
+    // 获取黑名单列表
+    getBlackList().then(res => {
         if (res.code === 200) {
-            searchFriendDialog.result = res.data;
-        } else {
-            searchFriendDialog.result = null;
+            blackListDialog.result = res.data
+            wholeResult.value = res.data
         }
     }).catch(err => {
-        searchFriendDialog.result = null;
+        ElMessage.error('获取失败')
     })
 }
 
-const closeSearchFriendDialog = () => {
-    searchFriendDialog.username = '';
-    searchFriendDialog.result = null;
-    searchFriendDialog.isFirstSearch = true;
-}
-
-const handleOpenAddFirend = () => {
-    // 打开申请面板
-    searchFriendDialog.addFriendDialogVisible = true;
-}
-
-const handleAddFriend = () => {
-    const addFirendVo = {
-        userId: userStore.userInfo.userId,
-        toUserId: searchFriendDialog.result.userId,
-        reason: searchFriendDialog.addFriendForm.reason
+const handleSearchUser = () => {
+    if (blackListDialog.keyword.trim() === '') {
+        blackListDialog.result = wholeResult.value
+        return
     }
+    // 搜索用户
+    blackListDialog.result = wholeResult.value.filter(item => item.remark.includes(blackListDialog.keyword) || item.userInfo.name.includes(blackListDialog.keyword))
 }
+
+const handleRemoveBlackList = (row) => {
+    // 移除黑名单
+    removeBlackList(row.userInfo.userId).then(res => {
+        if (res.code === 200) {
+            ElMessage.success('移除成功')
+            wholeResult.value = wholeResult.value.filter(item => item.userInfo.userId !== row.userInfo.userId)
+            blackListDialog.result = wholeResult.value
+        }
+    }).catch(err => {
+        ElMessage.error('移除失败')
+    })
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -145,65 +119,32 @@ const handleAddFriend = () => {
     }
 }
 
-.search-result-container {
-    margin-top: 10px;
+.black-list-container {
+    border-radius: 5px;
+    margin-top: 20px;
+    height: 500px;
 
-    .search-result {
+    .avatar-name {
         display: flex;
         flex-direction: row;
         align-items: center;
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
-        cursor: pointer;
 
-        &:hover {
-            background-color: #dedfe0;
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
         }
 
-        .search-result-info {
+        .name {
+            max-width: 70px;
             margin-left: 10px;
-            display: flex;
-            flex-direction: column;
-
-            .info-name {
-                font-size: 18px;
-                font-weight: bold;
-                color: #333333;
-            }
-
-            .info-username {
-                font-size: 14px;
-                color: #7a7a7a;
-                margin-top: 5px;
-            }
-        }
-
-        .search-result-operation {
-            margin-left: auto;
-        }
-    }
-}
-
-.user-info-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-
-    .user-info {
-        margin-left: 10px;
-        display: flex;
-        flex-direction: column;
-
-        .info-name {
+            flex: 1;
             font-size: 18px;
             font-weight: bold;
-            color: #333333;
-        }
-
-        .info-username {
-            font-size: 14px;
-            color: #7a7a7a;
-            margin-top: 5px;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
     }
 }

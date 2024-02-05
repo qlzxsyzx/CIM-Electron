@@ -32,12 +32,14 @@ import { formatLocalDateTimeToText } from '../assets/js/format'
 import { useChatStore } from '../store/chatStore';
 import { useUserInfoStore } from '../store/userInfoStore'
 import { useFriendStore } from '../store/friendStore'
+import { useGroupStore } from '../store/groupStore';
 
 const route = useRoute()
 const props = defineProps(["chatItem"])
 const chatStore = useChatStore()
 const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore()
+const groupStore = useGroupStore()
 
 const chatInfo = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
@@ -45,7 +47,7 @@ const chatInfo = computed(() => {
         return userInfoStore.getUserInfo(props.chatItem.recentChat.toUserId)
     } else {
         // 群聊
-        return chatStore.groupList.find(item => item.id == props.chatItem.recentChat.groupId)
+        return groupStore.findGroupByGroupId(props.chatItem.recentChat.groupId)
     }
 })
 
@@ -60,7 +62,7 @@ const name = computed(() => {
         return friend.remark || chatInfo.value.name
     } else {
         // 群聊
-        const groupSetting = chatStore.myGroupSettingMap.get(props.chatItem.recentChat.groupId)
+        const groupSetting = groupStore.findMyGroupSettingByGroupId(props.chatItem.recentChat.groupId)
         if (groupSetting) {
             return groupSetting.groupNickName || chatInfo.value.name
         }

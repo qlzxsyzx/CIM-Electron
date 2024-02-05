@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { getFriendList } from '../api/friend'
+import { getFriendList, blockFriend, removeFriend } from '../api/friend'
 import { useUserInfoStore } from './userInfoStore'
+import { useChatStore } from './chatStore'
 
 export const useFriendStore = defineStore('friendStore', {
   state: () => {
@@ -23,10 +24,33 @@ export const useFriendStore = defineStore('friendStore', {
       })
     },
     findFriendByUserId(userId) {
-        return this.friendList.find(item => item.friendId == userId)
+      return this.friendList.find((item) => item.friendId == userId)
     },
-    findFriendById(id){
-      return this.friendList.find(item => item.id == id)
+    findFriendById(id) {
+      return this.friendList.find((item) => item.id == id)
+    },
+    async blockFriend(friendId) {
+      const res = await blockFriend(friendId)
+      if (res.code === 200) {
+        const index = this.friendList.find((item) => item.friendId === friendId)
+        if (index !== -1) {
+          this.friendList.splice(index, 1)
+          const chatStore = useChatStore()
+          chatStore.removeRecentChatByToUserId(friendId)
+        }
+      }
+      return res
+    },
+    async deleteFriend(friendId) {
+      const res = await removeFriend(friendId)
+      if (res.code === 200) {
+        const index = this.friendList.findIndex((item) => item.friendId === friendId)
+        if (index !== -1) {
+          this.friendList.splice(index, 1)
+          const chatStore = useChatStore()
+          chatStore.removeRecentChatByToUserId(friendId)
+        }
+      }
     }
   }
 })

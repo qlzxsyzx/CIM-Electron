@@ -1,9 +1,9 @@
 <template>
     <div class="user-info-container">
-        <el-avatar :size="60" :src="props.applyMessage.userVo.avatarUrl" />
+        <el-avatar :size="60" :src="props.applyMessage.userInfo.avatarUrl" />
         <div class="user-info">
-            <span class="info-name"> {{ props.applyMessage.userVo.name }} </span>
-            <template v-if="props.applyMessage.userVo.userId === props.applyMessage.toUserId">
+            <span class="info-name"> {{ props.applyMessage.userInfo.name }} </span>
+            <template v-if="props.applyMessage.userInfo.userId === props.applyMessage.toUserId">
                 <span class="info-apply-reason">我：{{ props.applyMessage.applyReason }}</span>
             </template>
             <template v-else>
@@ -11,7 +11,7 @@
             </template>
         </div>
         <!-- 我的申请-->
-        <template v-if="props.applyMessage.userVo.userId === props.applyMessage.toUserId">
+        <template v-if="props.applyMessage.userInfo.userId === props.applyMessage.toUserId">
             <template v-if="props.applyMessage.status === 0">
                 <span class="apply-message-status">等待验证</span>
             </template>

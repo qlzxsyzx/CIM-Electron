@@ -37,6 +37,12 @@ export const useGroupStore = defineStore('groupStore', {
     // 获取群成员
     getMemberByGroupIdAndUserId(groupId, userId){
       return this.groupAndMembersMap.get(groupId).find(item=>item.userId === userId)
+    },
+    findGroupByGroupId(groupId){
+      return this.groupList.find(item=>item.groupId === groupId)
+    },
+    findMyGroupSettingByGroupId(groupId){
+      return this.myGroupSettingMap.get(groupId)
     }
   }
 })

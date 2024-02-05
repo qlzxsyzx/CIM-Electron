@@ -36,6 +36,7 @@ const recentChatList = computed(() => chatStore.recentChatList);
 useReconnect(() => {
     userStore.getUserInfo()
     friendStore.getFriendList()
+    groupStore.getGroupList()
 })
 
 // ws收到消息的回调，todo:先做简单的，

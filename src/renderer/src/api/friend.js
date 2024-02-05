@@ -57,3 +57,24 @@ export function removeFriend(friendId){
         method:'post',
     })
 }
+
+export function updatePromptStatus(id,status){
+    return request({
+        url:'/im-web/friend/updatePromptStatus/' + id + "/" + status,
+        method:'post',
+    })
+}
+
+export function getBlackList(){
+    return request({
+        url:'/im-web/friend/getBlackList',
+        method:'get'
+    })
+}
+
+export function removeBlackList(friendId){
+    return request({
+        url:'/im-web/friend/removeBlackList/' + friendId,
+        method:'post'
+    })
+}

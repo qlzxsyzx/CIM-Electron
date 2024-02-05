@@ -27,6 +27,14 @@ export const useChatStore = defineStore('chatStore', {
     findRecentChatByRoomId(roomId) {
       return this.recentChatList.find((item) => item.recentChat.roomId == roomId)
     },
+    removeRecentChatByToUserId(toUserId) {
+      this.recentChatList = this.recentChatList.filter((item) => item.recentChat.toUserId !== toUserId)
+      // 如果是当前会话
+      if (this.currentChatInfo.toUserId === toUserId) {
+        this.currentChatInfo = {}
+        this.currentChatHistory = []
+      }
+    },
     recordCurrentChatInfo(roomId) {
       this.currentChatInfo = this.recentChatList.find(
         (item) => item.recentChat.roomId == roomId

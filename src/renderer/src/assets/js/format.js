@@ -36,6 +36,15 @@ export const formatMessageDateTime = (localDateTime) => {
   })
 }
 
+export const formatDate = (localDateTime) => {
+  const date = new Date(localDateTime)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
 // format 文件大小
 export const formatFileSize = (size) => {
   if (size < 1024) {

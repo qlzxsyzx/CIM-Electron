@@ -15,10 +15,10 @@
         <!-- 同意好友申请dialog -->
         <el-dialog v-model="applyFriendMessageDialog.agreeApplyDialogVisible" title="同意申请" width="20%" @closed="handleAgreeApplyDialogClose" align-center>
             <div class="user-info-container">
-                <el-avatar :size="60" :src="applyFriendMessageDialog.agreeApplyDialogInfo.userVo.avatarUrl" />
+                <el-avatar :size="60" :src="applyFriendMessageDialog.agreeApplyDialogInfo.userInfo.avatarUrl" />
                 <div class="user-info">
-                    <span class="info-name"> {{ applyFriendMessageDialog.agreeApplyDialogInfo.userVo.name }} </span>
-                    <span class="info-username">账号： {{ applyFriendMessageDialog.agreeApplyDialogInfo.userVo.username }}</span>
+                    <span class="info-name"> {{ applyFriendMessageDialog.agreeApplyDialogInfo.userInfo.name }} </span>
+                    <span class="info-username">账号： {{ applyFriendMessageDialog.agreeApplyDialogInfo.userInfo.username }}</span>
                 </div>
             </div>
             <p>备注：</p>
