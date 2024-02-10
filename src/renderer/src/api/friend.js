@@ -44,9 +44,9 @@ export function refuseAddFriend(applyFriendMessageId){
     })
 }
 
-export function blockFriend(friendId){
+export function blockUser(toUserId){
     return request({
-        url:'/im-web/friend/blockFriend/' + friendId,
+        url:'/im-web/friend/blockUser/' + toUserId,
         method:'post',
     })
 }
@@ -76,5 +76,16 @@ export function removeBlackList(friendId){
     return request({
         url:'/im-web/friend/removeBlackList/' + friendId,
         method:'post'
+    })
+}
+
+export function updateRemark(id,remark){
+    return request({
+        url:'/im-web/friend/updateRemark',
+        method:'post',
+        data:{
+            id:id,
+            remark:remark
+        }
     })
 }

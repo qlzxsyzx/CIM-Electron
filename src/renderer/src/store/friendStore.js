@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getFriendList, blockFriend, removeFriend } from '../api/friend'
+import { getFriendList, blockUser, removeFriend } from '../api/friend'
 import { useUserInfoStore } from './userInfoStore'
 import { useChatStore } from './chatStore'
 
@@ -29,8 +29,8 @@ export const useFriendStore = defineStore('friendStore', {
     findFriendById(id) {
       return this.friendList.find((item) => item.id == id)
     },
-    async blockFriend(friendId) {
-      const res = await blockFriend(friendId)
+    async blockUser(friendId) {
+      const res = await blockUser(friendId)
       if (res.code === 200) {
         const index = this.friendList.find((item) => item.friendId === friendId)
         if (index !== -1) {
@@ -51,6 +51,7 @@ export const useFriendStore = defineStore('friendStore', {
           chatStore.removeRecentChatByToUserId(friendId)
         }
       }
+      return res
     }
   }
 })

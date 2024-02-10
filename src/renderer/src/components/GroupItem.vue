@@ -5,7 +5,7 @@
         </div>
         <div class="item-data-container">
             <div class="item-name">
-                {{ props.group.groupNickName || props.group.name}}({{ props.group.memberCount }})
+                {{ name}}
             </div>
         </div>
     </div>
@@ -13,15 +13,23 @@
 <script setup>
 import {ref,computed} from 'vue'
 import { useRouter,useRoute } from 'vue-router';
+import { useGroupStore } from '../store/groupStore'
 
 const route = useRoute()
 const router = useRouter()
+const groupStore = useGroupStore()
 
 const props = defineProps(["group"])
 
 const isClick = computed(() =>{
     return route.params.groupId == props.group.id
 })
+
+const name = computed(() =>{
+    const groupSetting = groupStore.findMyGroupSettingByGroupId(props.group.id)
+    return groupSetting.groupNickName || props.group.name
+})
+
 const openGroupInfo =() => {
     router.push({path: '/group/info/'+ props.group.id})
 }

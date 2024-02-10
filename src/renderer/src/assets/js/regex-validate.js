@@ -15,3 +15,15 @@ export const validName = (name) => {
     const reg = /^\S{2,20}$/;
     return reg.test(name);
 }
+
+export const validRemark = (remark) => {
+    // 备注不能包含空格等特殊字符且长度为0-20
+    const reg = /^\S{0,20}$/;
+    return reg.test(remark);
+}
+
+export const validGroupName = (name) => {
+    // 群名称不能包含空格等特殊字符且长度为1-20
+    const reg = /^\S{1,20}$/;
+    return reg.test(name);
+}

@@ -5,7 +5,7 @@
                 <SideTopToolBar />
             </div>
             <div class="side-list-container">
-                <template v-if="chatStore.groupList.length > 0">
+                <template v-if="groupStore.groupList.length > 0">
                     <div class="side-list-data">
                         <template v-for="[key, value] of groupMap" :key="value">
                             <div :id="'index-' + (key === '#' ? 'unknown' : key)" class="sort-title"> {{ key }} </div>
@@ -45,9 +45,7 @@ const groupStore = useGroupStore()
 const english = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '#']
 
 const groupMap = computed(() => {
-    if (!chatStore.groupList) return []
-    const result = sortListToMap(groupStore.groupList, item => item.name, item => item.groupNickName)
-    return result
+    return sortListToMap(groupStore.groupList, item => item.name, item => groupStore.findMyGroupSettingByGroupId(item.id).groupNickName)
 })
 
 const handleClickIndex = (index) => {
@@ -98,23 +96,17 @@ const handleClickIndex = (index) => {
                 top: 0;
                 right: 0;
                 width: 30px;
-                height: 100%;
-                gap: 5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
+                display: grid;
+                grid-template-rows: repeat(27, 1fr);
                 list-style-type: none;
                 /* 移除原点 */
                 padding: 0;
-                /* 可选：移除列表的内边距 */
-                margin: 0;
 
-                /* 可选：移除列表的外边距 */
                 a {
                     color: var(--el-text-color-secondary);
                     text-decoration: none;
                     cursor: pointer;
+                    font-size: 12px;
 
                     &:hover {
                         color: var(--el-color-primary);

@@ -60,7 +60,7 @@ const clickMenu = (num) => {
             router.push('/friend/home')
             break
         case 3:
-            groupStore.groupStore()
+            groupStore.getGroupList()
             router.push('/group/home')
             break
         case 4:

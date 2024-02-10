@@ -99,23 +99,17 @@ const handleClickIndex = (index) => {
                 top: 0;
                 right: 0;
                 width: 30px;
-                height: 100%;
-                gap: 5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
+                display: grid;
+                grid-template-rows: repeat(27, 1fr);
                 list-style-type: none;
                 /* 移除原点 */
                 padding: 0;
-                /* 可选：移除列表的内边距 */
-                margin: 0;
 
-                /* 可选：移除列表的外边距 */
                 a {
                     color: var(--el-text-color-secondary);
                     text-decoration: none;
                     cursor: pointer;
+                    font-size: 12px;
 
                     &:hover {
                         color: var(--el-color-primary);

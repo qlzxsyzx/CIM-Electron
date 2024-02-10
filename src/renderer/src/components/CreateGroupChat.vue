@@ -10,7 +10,9 @@
             <div class="right-header">
                 <el-form ref="createGroupFormRef" :model="createGroupForm" :rules="createGroupRules" label-width="80px">
                     <el-form-item style="font-size: 18px;" label="群聊头像">
-                        <CropperAvatar :data-info="createGroupForm.dataInfo" />
+                        <div style="margin: auto;">
+                            <CropperAvatar :data-info="createGroupForm.dataInfo" />
+                        </div>
                     </el-form-item>
                     <el-form-item label="群聊名称" prop="name">
                         <el-input v-model="createGroupForm.name" placeholder="请输入群名称" />

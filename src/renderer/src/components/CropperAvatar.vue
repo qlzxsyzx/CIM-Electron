@@ -1,7 +1,7 @@
 <template>
-  <div class="avatar-container" @click.self="selectImage">
+  <div class="avatar-container" :class="$attrs.class" @click.self="selectImage">
     <el-upload ref="selectImage" action="#" :http-request="() => { }" :before-upload="beforeUpload"
-      :show-file-list="false">
+      :show-file-list="false" accept="image/*">
       <el-button class="hidden-button" size="small" type="primary">点击上传</el-button>
     </el-upload>
     <img :src="options.img" title="点击上传" class="img-box" />
@@ -56,6 +56,8 @@ import { uploadImage, getByName } from "../api/image";
 import "vue-cropper/dist/index.css";
 import { VueCropper } from "vue-cropper";
 import { getCurrentInstance, ref, reactive, watch } from 'vue';
+
+const emit = defineEmits(['uploadSuccess'])
 
 const { proxy } = getCurrentInstance();
 const props = defineProps({
@@ -139,6 +141,7 @@ const uploadImg = () => {
         showCropper.value = false;
         dialogVisible.value = false;
         ElMessage.success("上传成功！");
+        emit('uploadSuccess', options.img)
       } else {
         ElMessage.error(res.message || '上传失败！')
       }
@@ -167,7 +170,6 @@ const closeDialog = () => {
   justify-content: center;
   height: 100px;
   width: 100px;
-  margin: auto;
 
   .hidden-button {
     display: none;
@@ -188,6 +190,25 @@ const closeDialog = () => {
       color: #fff;
       background: rgba(0, 0, 0, 0.5);
       cursor: pointer;
+    }
+  }
+
+  &.update-group-avatar {
+    &:hover {
+      &::after {
+        content: "修改";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 18px;
+        font-weight: bold;
+        background: rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+      }
     }
   }
 

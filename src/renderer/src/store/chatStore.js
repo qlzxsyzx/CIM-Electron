@@ -28,7 +28,9 @@ export const useChatStore = defineStore('chatStore', {
       return this.recentChatList.find((item) => item.recentChat.roomId == roomId)
     },
     removeRecentChatByToUserId(toUserId) {
-      this.recentChatList = this.recentChatList.filter((item) => item.recentChat.toUserId !== toUserId)
+      this.recentChatList = this.recentChatList.filter(
+        (item) => item.recentChat.toUserId !== toUserId
+      )
       // 如果是当前会话
       if (this.currentChatInfo.toUserId === toUserId) {
         this.currentChatInfo = {}
@@ -37,7 +39,7 @@ export const useChatStore = defineStore('chatStore', {
     },
     recordCurrentChatInfo(roomId) {
       this.currentChatInfo = this.recentChatList.find(
-        (item) => item.recentChat.roomId == roomId
+        (item) => item.recentChat.roomId === roomId
       ).recentChat
     },
     // 获取分页聊天记录
@@ -45,6 +47,10 @@ export const useChatStore = defineStore('chatStore', {
       const res = await getChatMessageList(roomId, 1, 10)
       if (res.code === 200) {
         this.currentChatHistory = res.data.reverse()
+        if (res.data.length > 0) {
+          this.recentChatList.find((item) => item.recentChat.roomId === roomId).lastMessage =
+            res.data[res.data.length - 1]
+        }
       }
       return res
     },
@@ -78,6 +84,7 @@ export const useChatStore = defineStore('chatStore', {
       const res = await createSingleChat(friendId)
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
+        this.currentChatInfo = res.data.recentChat
       }
       return res
     },
@@ -85,6 +92,7 @@ export const useChatStore = defineStore('chatStore', {
       const res = await createGroupChat(groupId)
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
+        this.currentChatInfo = res.data.recentChat
       }
       return res
     },

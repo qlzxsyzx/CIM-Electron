@@ -30,6 +30,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router';
 import { formatLocalDateTimeToText } from '../assets/js/format'
 import { useChatStore } from '../store/chatStore';
+import { useUserStore } from '../store/userStore';
 import { useUserInfoStore } from '../store/userInfoStore'
 import { useFriendStore } from '../store/friendStore'
 import { useGroupStore } from '../store/groupStore';
@@ -37,6 +38,7 @@ import { useGroupStore } from '../store/groupStore';
 const route = useRoute()
 const props = defineProps(["chatItem"])
 const chatStore = useChatStore()
+const userStore = useUserStore()
 const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
@@ -74,25 +76,33 @@ const isClick = computed(() => {
     return route.params.roomId === props.chatItem.recentChat.roomId
 })
 
+const userInfo = computed(() => {
+    return userStore.userInfo
+})
+
 const lastMessageContent = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
         // 私聊
         return props.chatItem.lastMessage.content
     } else {
         // 群聊
-        const sender = props.chatItem.sender
-        if (sender === null) {
-            return '我：' + props.chatItem.lastMessage.content
-        } else {
-            const friend = friendStore.findFriendByUserId(sender.userInfo.userId)
-            if (friend === null) {
-                // 不是好友
-                return sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+        if (props.chatItem.lastMessage) {
+            const message = props.chatItem.lastMessage
+            if (message.senderId === userInfo.value.userId) {
+                return '我：' + message.content
             } else {
-                // 是好友
-                return friend.remark || sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+                const sender = props.chatItem.sender
+                const friend = friendStore.findFriendByUserId(sender.userInfo.userId)
+                if (friend === null) {
+                    // 不是好友
+                    return sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+                } else {
+                    // 是好友
+                    return friend.remark || sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+                }
             }
         }
+        return ''
     }
 })
 

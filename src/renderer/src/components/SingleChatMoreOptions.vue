@@ -16,7 +16,8 @@
         </div>
         <div class="single-options-container">
             <div class="input-options">
-                <el-input v-model="friendInfo.remark" placeholder="请填写备注"></el-input>
+                <el-input v-model="remark" placeholder="请填写备注" show-word-limit maxlength="20"
+                    @change="handleModifyRemark"></el-input>
             </div>
         </div>
         <div class="single-options-container">
@@ -32,17 +33,23 @@
     </div>
 </template>
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeMount } from 'vue';
 import { useChatStore } from '../store/chatStore';
 import { useFriendStore } from '../store/friendStore';
 import { topChat } from '../api/chat';
-import { updatePromptStatus } from '../api/friend';
+import { updatePromptStatus, updateRemark } from '../api/friend';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
+import { validRemark } from '../assets/js/regex-validate'
 
 const router = useRouter();
 const chatStore = useChatStore();
 const friendStore = useFriendStore();
+const remark = ref('');
+
+onBeforeMount(() => {
+    remark.value = friendInfo.value.remark
+})
 
 const currentChatInfo = computed(() => {
     return chatStore.currentChatInfo;
@@ -74,6 +81,25 @@ const handleStatus = (num) => {
     })
 }
 
+const handleModifyRemark = () => {
+    if (remark.value === friendInfo.value.remark) {
+        return;
+    }
+    if (!validRemark(remark.value)) {
+        ElMessage.error('备注不能包含空格等特殊字符且长度为1-20')
+        return;
+    } else {
+        updateRemark(friendInfo.value.id, remark.value).then(res => {
+            if (res.code === 200) {
+                ElMessage.success('修改成功')
+                friendInfo.value.remark = remark.value
+            }
+        }).catch(err => {
+            ElMessage.error('修改失败')
+        })
+    }
+}
+
 const block = () => {
     // messagebox 提示
     ElMessageBox.confirm(
@@ -86,7 +112,7 @@ const block = () => {
         }
     ).then(() => {
         // 请求屏蔽
-        friendStore.blockFriend(friendInfo.value.friendId).then(res => {
+        friendStore.blockUser(friendInfo.value.friendId).then(res => {
             if (res.code === 200) {
                 ElMessage.success('拉黑成功');
                 router.push('/chat/home');
@@ -94,8 +120,8 @@ const block = () => {
         }).catch(err => {
             ElMessage.error('拉黑失败');
         })
-    }).catch(() => {
-        ElMessage.error('拉黑失败');
+    }).catch((err) => {
+        console.log(err);
     })
 }
 
@@ -116,11 +142,11 @@ const deleteFriend = () => {
                 router.push('/chat/home');
             }
         }).catch(err => {
+            console.log(err);
             ElMessage.error('删除失败');
         })
     }).catch((err) => {
         console.log(err);
-        ElMessage.error('删除失败');
     })
 }
 
@@ -184,6 +210,7 @@ const deleteFriend = () => {
         }
 
         .switch-options {
+            margin: 0 10px;
             height: 100%;
             flex: 1;
             display: flex;

@@ -5,7 +5,7 @@
     </div>
 
     <!-- 添加好友dialog -->
-    <el-dialog v-model="searchFriendDialog.visible" title="添加好友" width="30%" align-center @closed="closeSearchFriendDialog">
+    <el-dialog v-model="searchFriendDialog.visible" title="添加好友" width="30%" align-center @closed="closeSearchFriendDialog" destroy-on-close>
         <!-- 搜索好友框 -->
         <el-input v-model="searchFriendDialog.username" placeholder="输入账号搜索..." size="large" @keyup.enter="handleSearchUser">
             <template #append>
@@ -32,7 +32,7 @@
             </template>
         </div>
         <!-- 添加好友对话框 -->
-        <el-dialog v-model="searchFriendDialog.addFriendDialogVisible" title="添加好友" width="20%" append-to-body align-center>
+        <el-dialog v-model="searchFriendDialog.addFriendDialogVisible" title="添加好友" width="20%" append-to-body align-center destroy-on-close>
             <div class="user-info-container">
                 <el-avatar :size="60" :src="searchFriendDialog.result.avatarUrl" />
                 <div class="user-info">

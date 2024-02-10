@@ -11,9 +11,8 @@
             </div>
             <div class="main-chat-container">
                 <!-- 单聊更多选项 -->
-                <el-drawer v-model="moreOptionsVisible" :with-header="false" size="300"
-                    style="background-color: #f0f2f5;">
-                    <SingleChatMoreOptions />
+                <el-drawer v-model="moreOptionsVisible" :with-header="false" size="300" style="background-color: #f0f2f5;">
+                    <SingleChatMoreOptions v-if="moreOptionsVisible" />
                 </el-drawer>
                 <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
                     <template v-for="item in chatMessageList" :key="item.messageId">
@@ -65,7 +64,7 @@
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
 import { handlePaste, encodeHtmlToMessage, decodeMessageToHtml } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect, onActivated,onMounted,onBeforeMount } from 'vue'
+import { ref, computed, nextTick, watchPostEffect, onActivated, onMounted, onBeforeMount } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
@@ -91,8 +90,7 @@ const pageSize = ref(10)
 const isHasMore = ref(true)
 const moreOptionsVisible = ref(false)
 
-onActivated(() => {
-    isLoading.value = true
+onBeforeMount(() => {
     // 获取聊天记录
     chatStore.getChatMessageList(route.params.roomId).then(res => {
         if (res.code === 200) {
