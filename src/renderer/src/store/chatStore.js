@@ -24,6 +24,12 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
+    findRecentChatByToUserId(toUserId){
+      return this.recentChatList.find((item) => item.recentChat.toUserId == toUserId)
+    },
+    findRecentChatByGroupId(groupId) {
+      return this.recentChatList.find((item) => item.recentChat.groupId == groupId)
+    },
     findRecentChatByRoomId(roomId) {
       return this.recentChatList.find((item) => item.recentChat.roomId == roomId)
     },
@@ -37,10 +43,8 @@ export const useChatStore = defineStore('chatStore', {
         this.currentChatHistory = []
       }
     },
-    recordCurrentChatInfo(roomId) {
-      this.currentChatInfo = this.recentChatList.find(
-        (item) => item.recentChat.roomId === roomId
-      ).recentChat
+    recordCurrentChatInfo(recentChat) {
+      this.currentChatInfo = recentChat
     },
     // 获取分页聊天记录
     async getChatMessageList(roomId) {

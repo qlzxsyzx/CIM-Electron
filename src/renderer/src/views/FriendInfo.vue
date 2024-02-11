@@ -203,15 +203,14 @@ const deleteFriend = () => {
 }
 
 const handleClickMessage = (friend) => {
-    console.log('handleClickMessage', friend.roomId)
     // 判断会话是否存在
-    const chat = chatStore.findRecentChatByRoomId(friend.roomId);
+    const chat = chatStore.findRecentChatByToUserId(friend.toUserId);
     if (chat) {
-        router.push('/chat/single/' + friend.roomId)
+        router.push('/chat/single/' + friend.toUserId)
     } else {
         chatStore.createSingleChat(friend.friendId).then(res => {
             if (res.code == 200) { // 创建成功，跳转到聊天页面
-                router.push('/chat/single/' + friend.roomId)
+                router.push('/chat/single/' + friend.toUserId)
             }
         }).catch(err => {
             ElMessage.error(err.message)

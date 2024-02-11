@@ -132,11 +132,14 @@ onBeforeMount(() => {
     // 获取最近会话
     chatStore.getRecentChatList().then((res) => {
         if (res.code === 200) {
-            // 获取当前的roomId
-            const roomId = route.params.roomId
-            if (roomId) {
-                // 存在roomId，则打开聊天室
-                chatStore.recordCurrentChatInfo(roomId)
+            const routeName = route.name
+            if(routeName === '个人聊天'){
+                const recentChat = chatStore.findRecentChatByToUserId(route.params.userId)
+                chatStore.recordCurrentChatInfo(recentChat)
+            }
+            if(routeName === '群会话'){
+                const recentChat = chatStore.findRecentChatByGroupId(route.params.groupId)
+                chatStore.recordCurrentChatInfo(recentChat)
             }
         }
     })

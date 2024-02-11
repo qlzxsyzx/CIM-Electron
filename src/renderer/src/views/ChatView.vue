@@ -28,21 +28,23 @@ import { ref, computed } from "vue"
 import ChatItem from '../components/ChatItem.vue'
 import { useChatStore } from '../store/chatStore'
 import SideTopToolBar from '../components/SideTopToolBar.vue'
-import { useRoute, useRouter } from "vue-router"
+import { useRouter } from "vue-router"
 import { useReconnect } from '../assets/js/reconnectMixin'
 
 const chatStore = useChatStore()
-const route = useRoute()
 const router = useRouter()
 
 useReconnect(() => {
     chatStore.getRecentChatList().then((res) => {
         if (res.code === 200) {
-            // 获取当前的roomId
-            const roomId = route.params.roomId
-            if (roomId) {
-                // 存在roomId，则打开聊天室
-                chatStore.recordCurrentChatInfo(roomId)
+            if (currentChatInfo) {
+                if (currentChatInfo.value.type === 0) {
+                    router.push('/chat/single/' + currentChatInfo.value.toUserId)
+                } else if (currentChatInfo.type === 1) {
+                    router.push('/chat/group/' + currentChatInfo.value.groupId)
+                }
+            } else {
+                router.push('/chat/home')
             }
         }
     })
@@ -52,12 +54,16 @@ const recentChatList = computed(() => {
     return chatStore.recentChatList
 })
 
+const currentChatInfo = computed(() => {
+    return chatStore.currentChatInfo
+})
+
 const openChat = (item) => {
-    chatStore.recordCurrentChatInfo(item.recentChat.roomId)
+    chatStore.recordCurrentChatInfo(item)
     if (item.recentChat.type == 0) {
-        router.push({ path: '/chat/single/' + item.recentChat.roomId })
+        router.push({ path: '/chat/single/' + item.recentChat.toUserId })
     } else {
-        router.push({ path: '/chat/group/' + item.recentChat.roomId })
+        router.push({ path: '/chat/group/' + item.recentChat.groupId })
     }
 }
 </script>

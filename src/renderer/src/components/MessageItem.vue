@@ -52,7 +52,8 @@ const friendStore = useFriendStore()
 const groupStore = useGroupStore()
 
 const currentChatInfo = computed(() => {
-    return chatStore.currentChatInfo
+    if (!chatStore.currentChatInfo) return null
+    return chatStore.currentChatInfo.recentChat
 })
 
 const userInfo = computed(() => {
@@ -76,7 +77,7 @@ const name = computed(() => {
         }
     } else {
         // 群聊
-        const groupMember = groupStore.getMemberByGroupIdAndUserId(item => item.userId == userInfo.value.userId && item.groupId == currentChatInfo.value.groupId)
+        const groupMember = groupStore.getMemberByGroupIdAndUserId(currentChatInfo.value.groupId,userInfo.value.userId)
         if (props.messageInfo.senderId === userStore.userInfo.userId) {
             //自己
             return groupMember.userNickName || userInfo.value.name

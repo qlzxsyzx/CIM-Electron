@@ -20,8 +20,8 @@ const routes = [
                 redirect: 'chat/home',
                 children: [
                     {path: 'home', component: () => import('../views/Home.vue')},
-                    {path: 'group/:roomId', name: '群会话', component: () => import('../views/GroupChatMain.vue')},
-                    {path: 'single/:roomId', name: '个人聊天', component: () => import('../views/ChatMain.vue')}
+                    {path: 'group/:groupId', name: '群会话', component: () => import('../views/GroupChatMain.vue')},
+                    {path: 'single/:userId', name: '个人聊天', component: () => import('../views/ChatMain.vue')}
                 ]
             },
             {

@@ -4,7 +4,10 @@ import {
   createGroup,
   getGroupInfo,
   updateGroupName,
-  updateGroupAvatar
+  updateGroupAvatar,
+  getGroupMemberList,
+  getNoticeListByGroupId,
+  publishNewNotice
 } from '../api/group'
 import { useChatStore } from './chatStore'
 
@@ -13,7 +16,8 @@ export const useGroupStore = defineStore('groupStore', {
     return {
       groupList: [], // 群组列表
       myGroupSettingMap: new Map(), // 我的群组设置 key:groupId
-      groupAndMembersMap: new Map() // 群成员列表 key:groupId
+      groupAndMembersMap: new Map(), // 群成员列表 key:groupId
+      currnetGroupInfo: null // 当前群组信息
     }
   },
   actions: {
@@ -59,6 +63,7 @@ export const useGroupStore = defineStore('groupStore', {
           group.name = res.data.name
           group.avatarUrl = res.data.avatarUrl
         }
+        this.currnetGroupInfo = res.data
         if (res.data.groupSetting) {
           this.myGroupSettingMap.set(groupId, res.data.groupSetting)
         }
@@ -83,6 +88,38 @@ export const useGroupStore = defineStore('groupStore', {
         const group = this.findGroupByGroupId(groupId)
         if (group) {
           group.name = name
+        }
+      }
+      return res
+    },
+    async getGroupMemberList(groupId, pageNum, pageSize) {
+      const res = await getGroupMemberList(groupId, pageNum, pageSize)
+      if (res.code === 200) {
+        // 更新group信息
+        let memberMap = this.groupAndMembersMap.get(groupId)
+        if (!memberMap) {
+          memberMap = new Map()
+        }
+        res.data.forEach((item) => {
+          memberMap.set(item.userId, item)
+        })
+      }
+      return res
+    },
+    async getNoticeListByGroupId(groupId, pageNum, pageSize) {
+      const res = await getNoticeListByGroupId(groupId, pageNum, pageSize)
+      if (res.code === 200) {
+        if(res.data && res.data.length > 0 && pageNum === 1 && this.currnetGroupInfo){
+          this.currnetGroupInfo.latestNotice = res.data[0]
+        }
+      }
+      return res
+    },
+    async publishNewNotice(data) {
+      const res = await publishNewNotice(data)
+      if (res.code === 200) {
+        if(this.currnetGroupInfo){
+          this.currnetGroupInfo.latestNotice = res.data
         }
       }
       return res

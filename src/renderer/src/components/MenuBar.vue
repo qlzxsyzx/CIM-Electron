@@ -74,15 +74,15 @@ const clickMenu = (num) => {
 const handleClickChat = () => {
     chatStore.getRecentChatList().then((res) => {
         if (res.code === 200) {
-            // 获取当前的roomId
             // 查询是否存在点击过的对话
             const currentChatInfo = chatStore.currentChatInfo
-            if (currentChatInfo) {
-                if (currentChatInfo.type === 0) {
-                    router.push('/chat/single/' + currentChatInfo.roomId)
+            if (currentChatInfo.recentChat) {
+                const recentChat = currentChatInfo.recentChat
+                if (recentChat.type === 0) {
+                    router.push('/chat/single/' + recentChat.toUserId)
                     return
-                } else if (currentChatInfo.type === 1) {
-                    router.push('/chat/group/' + currentChatInfo.roomId)
+                } else if (recentChat.type === 1) {
+                    router.push('/chat/group/' + recentChat.groupId)
                     return
                 }
             }

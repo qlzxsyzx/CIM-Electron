@@ -52,23 +52,46 @@ export function updateGroupPromptStatus(settingId, status) {
 }
 
 export function updateGroupName(groupId, name) {
-    return request({
-      url: '/im-web/group/updateGroupName',
-      method: 'post',
-      data: {
-        groupId: groupId,
-        name: name
-      }
-    })
-  }
+  return request({
+    url: '/im-web/group/updateGroupName',
+    method: 'post',
+    data: {
+      groupId: groupId,
+      name: name
+    }
+  })
+}
 
 export function updateGroupAvatar(groupId, url) {
-    return request({
-      url: '/im-web/group/updateGroupAvatar',
-      method: 'post',
-      data: {
-        groupId: groupId,
-        avatarUrl: url
-      }
-    })
-  }
+  return request({
+    url: '/im-web/group/updateGroupAvatar',
+    method: 'post',
+    data: {
+      groupId: groupId,
+      avatarUrl: url
+    }
+  })
+}
+
+export function getGroupMemberList(groupId, pageNum, pageSize) {
+  return request({
+    url: '/im-web/group/getGroupMemberList/' + groupId + '/' + pageNum + '/' + pageSize,
+    method: 'get'
+  })
+}
+
+
+export function getNoticeListByGroupId(groupId, pageNum, pageSize) {
+  return request({
+    url: '/im-web/group/getNoticeListByGroupId/' + groupId + '/' + pageNum + '/' + pageSize,
+    method: 'get'
+  })
+}
+
+export function publishNewNotice(createData) {
+  return request({
+    url: '/im-web/group/publishNewNotice',
+    method: 'post',
+    data: createData
+  })
+}

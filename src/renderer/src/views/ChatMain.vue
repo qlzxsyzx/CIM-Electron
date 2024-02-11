@@ -63,10 +63,10 @@
 <script setup>
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
-import { handlePaste, encodeHtmlToMessage, decodeMessageToHtml } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect, onActivated, onMounted, onBeforeMount } from 'vue'
+import { handlePaste, encodeHtmlToMessage } from '../assets/js/utils';
+import { ref, computed, nextTick, watchPostEffect, watch } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
-import { useRoute, onBeforeRouteUpdate } from 'vue-router';
+import { onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { useFriendStore } from '../store/friendStore';
@@ -76,7 +76,6 @@ import { useReconnect } from '../assets/js/reconnectMixin';
 import { uploadImage, getByName } from '../api/image';
 import SingleChatMoreOptions from '../components/SingleChatMoreOptions.vue';
 
-const route = useRoute()
 const chatStore = useChatStore()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
@@ -90,71 +89,65 @@ const pageSize = ref(10)
 const isHasMore = ref(true)
 const moreOptionsVisible = ref(false)
 
-onBeforeMount(() => {
-    // 获取聊天记录
-    chatStore.getChatMessageList(route.params.roomId).then(res => {
-        if (res.code === 200) {
-            isLoading.value = false
-        }
-    })
-})
-
 onBeforeRouteUpdate((to, from, next) => {
     isLoading.value = true
     isNeedScrollToBottom.value = true
-    // 在这里重新获取聊天记录
-    console.log('获取聊天室聊天记录', to.params.roomId)
-    chatStore.recordCurrentChatInfo(to.params.roomId)
-    // 获取聊天记录
-    chatStore.getChatMessageList(to.params.roomId).then(res => {
-        if (res.code === 200) {
-            isLoading.value = false
-        }
-    })
     next()
 })
 
 useReconnect(() => {
     isLoading.value = true
     // 获取聊天记录
-    chatStore.getChatMessageList(route.params.roomId).then(res => {
+    chatStore.getChatMessageList(currentChatInfo.value.roomId).then(res => {
         if (res.code === 200) {
-            nextTick(() => {
-                isLoading.value = false
-            })
+            isLoading.value = false
+            if (isNeedScrollToBottom.value) {
+                firstOpenScroll()
+            }
         }
     })
 })
 
 const friend = computed(() => {
-    return friendStore.friendList.find(item => item.friendId === currentChatInfo.value.toUserId)
+    if (!currentChatInfo.value) return null
+    return friendStore.findFriendByUserId(currentChatInfo.value.toUserId)
 })
 
 const friendUserInfo = computed(() => {
+    if (!currentChatInfo.value) return null
     return userInfoStore.getUserInfo(currentChatInfo.value.toUserId)
 })
 
 const currentChatInfo = computed(() => {
-    return chatStore.currentChatInfo
+    if (!chatStore.currentChatInfo) return null
+    return chatStore.currentChatInfo.recentChat
 })
 
 const chatMessageList = computed(() => {
     if (chatStore.currentChatHistory.length > 0) {
         return chatStore.currentChatHistory
     } else {
-        return null
+        return []
     }
 })
 
 watchPostEffect(() => {
-    if (friend.value !== null && !isLoading.value && isNeedScrollToBottom.value) {
-        firstOpenScroll()
+    if (currentChatInfo.value) {
+        // 获取聊天记录
+        chatStore.getChatMessageList(currentChatInfo.value.roomId).then(res => {
+            if (res.code === 200) {
+                isLoading.value = false
+                if (isNeedScrollToBottom.value) {
+                    firstOpenScroll()
+                }
+            }
+        })
     }
 })
 
 watchPostEffect(() => {
     if (isTop.value && isHasMore.value) {
-        chatStore.getMoreChatMessages(route.params.roomId, pageNum.value, pageSize.value).then(res => {
+        chatStore.getMoreChatMessages(currentChatInfo.value.roomId, pageNum.value, pageSize.value).then(res => {
             if (res.code === 200) {
                 if (res.data.length < 10) {
                     isHasMore.value = false
@@ -188,7 +181,8 @@ const handleScroll = () => {
         isNeedScrollToBottom.value = false
     }
     // 判断是否滚动到顶部-50,滚到就获取更多消息
-    if (scrollTop <= 50) {
+    if (scrollTop <= 50 && chatMessageList.value.length >= 10) {
+        console.log('滚动到顶部',scrollTop)
         isTop.value = true
     } else {
         isTop.value = false
@@ -213,7 +207,7 @@ const fileUploadCallback = (file) => {
     // 粘贴的是文件，创建文件发送消息
     const sendingMessage = {
         messageId: new Date().getTime(),
-        roomId: route.params.roomId,
+        roomId: currentChatInfo.value.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: friendUserInfo.value.userId,
         receiverType: 1,
@@ -314,7 +308,7 @@ const handleSendMesage = async () => {
     // 发送消息，发送中
     const sendingMessage = {
         messageId: new Date().getTime(),
-        roomId: route.params.roomId,
+        roomId: currentChatInfo.value.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: friendUserInfo.value.userId,
         receiverType: 1,
@@ -367,7 +361,7 @@ const handleSendMesage = async () => {
         return
     } else {
         const createMessageDto = {
-            roomId: route.params.roomId,
+            roomId: currentChatInfo.value.roomId,
             senderId: userStore.userInfo.userId,
             receiverId: friendUserInfo.value.userId,
             receiverType: 1,

@@ -43,6 +43,11 @@ const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
 
+const currentChatInfo = computed(() => {
+    if(!chatStore.currentChatInfo) return null
+    return chatStore.currentChatInfo.recentChat
+})
+
 const chatInfo = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
         // 私聊
@@ -73,7 +78,8 @@ const name = computed(() => {
 })
 
 const isClick = computed(() => {
-    return route.params.roomId === props.chatItem.recentChat.roomId
+    if(!currentChatInfo.value) return false
+    return currentChatInfo.value.roomId === props.chatItem.recentChat.roomId
 })
 
 const userInfo = computed(() => {
@@ -95,10 +101,10 @@ const lastMessageContent = computed(() => {
                 const friend = friendStore.findFriendByUserId(sender.userInfo.userId)
                 if (friend === null) {
                     // 不是好友
-                    return sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+                    return sender.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
                 } else {
                     // 是好友
-                    return friend.remark || sender.member.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
+                    return friend.remark || sender.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
                 }
             }
         }
