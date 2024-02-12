@@ -10,12 +10,11 @@
                 </div>
             </div>
             <div class="main-group-container">
+                <!-- 群聊更多选项 -->
+                <el-drawer v-model="moreOptionsVisible" :with-header="false" size="300" style="background-color: #f0f2f5;">
+                    <GroupChatMoreOptions v-if="moreOptionsVisible" :groupMembers="sortMemberList" />
+                </el-drawer>
                 <div class="main-chat-container">
-                    <!-- 群聊更多选项 -->
-                    <el-drawer v-model="moreOptionsVisible" :with-header="false" size="300"
-                        style="background-color: #f0f2f5;">
-                        <GroupChatMoreOptions v-if="moreOptionsVisible" />
-                    </el-drawer>
                     <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
                         <template v-for="item in chatMessageList" :key="item.messageId">
                             <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
@@ -90,8 +89,8 @@
         </template>
     </div>
     <div class="el-overlay" v-show="moreOptionsVisible" style="opacity: 0;" @click="moreOptionsVisible = false"></div>
-    <el-dialog destroy-on-close v-model="noticeDialogVisible" title="群公告" width="400">
-        <GroupNotice v-if="noticeDialogVisible"/>
+    <el-dialog v-model="noticeDialogVisible" title="群公告" width="400">
+        <GroupNotice />
     </el-dialog>
 </template>
 
@@ -129,20 +128,13 @@ const pageNum = ref(2)
 const pageSize = ref(10)
 const isHasMore = ref(true)
 const moreOptionsVisible = ref(false)
-const group = ref(null)
-const groupMembers = ref([])
 
 onBeforeMount(() => {
     // 获取群组信息
     groupStore.getGroupInfo(route.params.groupId).then(res => {
         if (res.code === 200 || res.data.roomId) {
-            group.value = res.data
             // 获取群组成员
-            groupStore.getGroupMemberList(res.data.id, 1, 200).then(res => {
-                if (res.code === 200) {
-                    groupMembers.value = res.data
-                }
-            })
+            groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
@@ -165,13 +157,8 @@ onBeforeRouteUpdate((to, from, next) => {
     // 获取群组信息
     groupStore.getGroupInfo(to.params.groupId).then(res => {
         if (res.code === 200 || res.data.roomId) {
-            group.value = res.data
             // 获取群组成员
-            groupStore.getGroupMemberList(res.data.id, 1, 200).then(res => {
-                if (res.code === 200) {
-                    groupMembers.value = res.data
-                }
-            })
+            groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
@@ -193,13 +180,8 @@ useReconnect(() => {
     // 获取聊天记录
     groupStore.getGroupInfo(route.params.groupId).then(res => {
         if (res.code === 200 || res.data.roomId) {
-            group.value = res.data
             // 获取群组成员
-            groupStore.getGroupMemberList(res.data.id, 1, 200).then(res => {
-                if (res.code === 200) {
-                    groupMembers.value = res.data
-                }
-            })
+            groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
@@ -213,6 +195,15 @@ useReconnect(() => {
     }).catch(err => {
         ElMessage.error('获取数据失败')
     })
+})
+
+const group = computed(() => {
+    return groupStore.currnetGroupInfo
+})
+
+const groupMembers = computed(() => {
+    const membersMap = groupStore.groupAndMembersMap.get(route.params.groupId)
+    return membersMap ? Array.from(membersMap.values()) : []
 })
 
 const currentChatInfo = computed(() => {
@@ -236,10 +227,10 @@ const name = computed(() => {
 })
 
 const noticeContent = computed(() => {
-    const notice = group.value.notice
+    const notice = group.value.latestNotice
     if (notice) {
         if (notice.image) {
-            return '[图片]' + notice.content
+            return '【图片】' + notice.content
         } else {
             return notice.content
         }
@@ -655,17 +646,18 @@ function restoreSelection() {
         flex-direction: row;
         flex: 1;
         height: calc(100% - 101px);
+        position: relative;
+
+
+        :deep(.el-overlay) {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0);
+        }
 
         .main-chat-container {
             display: flex;
             flex: 1;
             flex-direction: column;
-            position: relative;
-
-            :deep(.el-overlay) {
-                position: absolute;
-                background-color: rgba(0, 0, 0, 0);
-            }
 
             .main-view-container {
                 flex: 1;
@@ -679,7 +671,7 @@ function restoreSelection() {
                 display: flex;
                 flex-direction: column;
                 width: 100%;
-                height: 100%;
+                height: 30%;
                 border-top: 1px solid var(--el-color-info-light-5);
 
                 .tool-area {
@@ -748,10 +740,12 @@ function restoreSelection() {
                 .notice-content {
                     flex: 1;
                     max-height: 150px;
+                    max-width: 180px;
                     color: var(--el-color-info);
                     font-size: 14px;
                     line-height: 25px;
                     overflow: hidden;
+                    word-wrap: break-word;
                     display: -webkit-box;
                     -webkit-line-clamp: 6;
                     -webkit-box-orient: vertical;

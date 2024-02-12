@@ -14,10 +14,13 @@
                     @change="handleStatus"></el-switch>
             </div>
         </div>
-        <div class="single-options-container">
-            <div class="input-options">
-                <el-input v-model="remark" placeholder="请填写备注" show-word-limit maxlength="20"
-                    @change="handleModifyRemark"></el-input>
+        <div class="input-option-container">
+            <span class="title">备注</span>
+            <div class="single-options-container">
+                <div class="input-options">
+                    <el-input v-model="remark" placeholder="请填写备注" show-word-limit maxlength="20"
+                        @change="handleModifyRemark"></el-input>
+                </div>
             </div>
         </div>
         <div class="single-options-container">
@@ -52,7 +55,7 @@ onBeforeMount(() => {
 })
 
 const currentChatInfo = computed(() => {
-    return chatStore.currentChatInfo;
+    return chatStore.currentChatInfo.recentChat
 })
 
 const friendInfo = computed(() => {
@@ -86,7 +89,7 @@ const handleModifyRemark = () => {
         return;
     }
     if (!validRemark(remark.value)) {
-        ElMessage.error('备注不能包含空格等特殊字符且长度为1-20')
+        ElMessage.error('备注不能包含空格等特殊字符且长度为0-20')
         return;
     } else {
         updateRemark(friendInfo.value.id, remark.value).then(res => {
@@ -158,13 +161,16 @@ const deleteFriend = () => {
     flex-direction: column;
     gap: 20px;
 
-    .single-options-container {
+    .input-option-container {
         display: flex;
-        flex-direction: row;
-        background-color: white;
-        border-radius: 5px;
-        height: 40px;
-        align-items: center;
+        flex-direction: column;
+
+        .title {
+            font-size: 14px;
+            color: #999;
+            margin-left: 10px;
+            padding: 5px;
+        }
 
         .input-options {
             height: 100%;
@@ -189,6 +195,16 @@ const deleteFriend = () => {
                 }
             }
         }
+
+    }
+
+    .single-options-container {
+        display: flex;
+        flex-direction: row;
+        background-color: white;
+        border-radius: 5px;
+        height: 40px;
+        align-items: center;
 
         .button-options {
             height: 100%;

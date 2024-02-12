@@ -80,7 +80,6 @@ export function getGroupMemberList(groupId, pageNum, pageSize) {
   })
 }
 
-
 export function getNoticeListByGroupId(groupId, pageNum, pageSize) {
   return request({
     url: '/im-web/group/getNoticeListByGroupId/' + groupId + '/' + pageNum + '/' + pageSize,
@@ -93,5 +92,64 @@ export function publishNewNotice(createData) {
     url: '/im-web/group/publishNewNotice',
     method: 'post',
     data: createData
+  })
+}
+
+export function removeNotice(id) {
+  return request({
+    url: '/im-web/group/removeNotice/' + id,
+    method: 'post'
+  })
+}
+
+export function updateGroupNoSpeakStatus(groupId, status) {
+  return request({
+    url: '/im-web/group/updateGroupNoSpeakStatus/' + groupId + '/' + status,
+    method: 'post'
+  })
+}
+
+export function getCandidateMemberList(groupId) {
+  return request({
+    url: '/im-web/group/getCandidateMemberList/' + groupId,
+    method: 'get'
+  })
+}
+
+export function transferGroup(groupId, memberId) {
+  return request({
+    url: '/im-web/group/transferGroup',
+    method: 'post',
+    data: { groupId: groupId, memberId: memberId }
+  })
+}
+
+export function dismissGroup(groupId) {
+  return request({
+    url: '/im-web/group/dismissGroup/' + groupId,
+    method: 'post'
+  })
+}
+
+export function inviteFriendToJoinGroup(data) {
+  return request({
+    url: '/im-web/group/inviteFriendToJoinGroup',
+    method: 'post',
+    data: data
+  })
+}
+
+export function removeGroupMember(data) {
+  return request({
+    url: '/im-web/group/removeGroupMember',
+    method: 'post',
+    data: data
+  })
+}
+
+export function exitGroup(groupId) {
+  return request({
+    url: '/im-web/group/exitGroup/' + groupId,
+    method: 'post'
   })
 }

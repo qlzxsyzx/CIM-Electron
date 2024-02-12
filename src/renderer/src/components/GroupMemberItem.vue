@@ -32,9 +32,9 @@ const userInfo = computed(() => props.member.userInfo);
 
 const name = computed(() => {
     if (friend.value) {
-        return friend.value.remark || member.userNickName || userInfo.value.name;
+        return friend.value.remark || member.value.userNickName || userInfo.value.name;
     } else {
-        return member.userNickName || userInfo.value.name;
+        return member.value.userNickName || userInfo.value.name;
     }
 });
 </script>

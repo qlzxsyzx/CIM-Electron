@@ -32,7 +32,7 @@
             </template>
         </div>
         <!-- 添加好友对话框 -->
-        <el-dialog v-model="searchFriendDialog.addFriendDialogVisible" title="添加好友" width="20%" append-to-body align-center destroy-on-close>
+        <el-dialog v-model="searchFriendDialog.addFriendDialogVisible" title="添加好友" width="20%" append-to-body align-center @closed="closeAddFriendDialog">
             <div class="user-info-container">
                 <el-avatar :size="60" :src="searchFriendDialog.result.avatarUrl" />
                 <div class="user-info">
@@ -104,6 +104,13 @@ const closeSearchFriendDialog = () => {
 const handleOpenAddFirend = () => {
     // 打开申请面板
     searchFriendDialog.addFriendDialogVisible = true;
+}
+
+const closeAddFriendDialog = () => {
+    searchFriendDialog.addFriendForm = {
+        remark: '', 
+        reason: ''
+    };
 }
 
 const handleAddFriend = () => {

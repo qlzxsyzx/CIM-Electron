@@ -186,7 +186,7 @@ const notice = computed(() => {
     if (currentGroupInfo.value.latestNotice) {
         const latestNotice = currentGroupInfo.value.latestNotice
         if (latestNotice.image) {
-            return '[图片]' + latestNotice.content
+            return '【图片】' + latestNotice.content
         } else {
             return latestNotice.content
         }
@@ -227,7 +227,6 @@ const handleModifyName = () => {
             if (res.code === 200) {
                 ElMessage.success('修改成功')
                 isModifyName.value = false;
-                currentGroupInfo.value.name = modifyName.value
             }
         }).catch(err => {
             console.log(err);
@@ -423,15 +422,15 @@ const exitGroup = () => {
 }
 
 const handleClickMessage = (group) => {
-    console.log('handleClickMessage', group.roomId)
     // 判断会话是否存在
     const chat = chatStore.findRecentChatByRoomId(group.roomId);
     if (chat) {
-        router.push('/chat/group/' + group.roomId)
+        router.push('/chat/group/' + group.id)
+        chatStore.recordCurrentChatInfo(chat)
     } else {
         chatStore.createGroupChat(group.id).then(res => {
             if (res.code == 200) { // 创建成功，跳转到聊天页面
-                router.push('/chat/group/' + group.roomId)
+                router.push('/chat/group/' + group.id)
             }
         }).catch(err => {
             ElMessage.error(err.message)
@@ -524,6 +523,7 @@ const handleClickMessage = (group) => {
         }
 
         .input {
+            cursor: pointer;
             max-width: 50%;
 
             .remark {

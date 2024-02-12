@@ -477,7 +477,7 @@ function restoreSelection() {
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 100%;
+            height: 30%;
             border-top: 1px solid var(--el-color-info-light-5);
 
             .tool-area {

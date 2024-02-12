@@ -1,14 +1,14 @@
 <template>
     <div class="group-notice-container">
         <div class="title-container">
-            <span class="title">公告</span>
-            <el-button type="primary" @click="handlePublishNewNotice">发布新公告</el-button>
+            <el-button v-if="groupSetting.role !== 1" type="primary" @click="handlePublishNewNotice">发布新公告</el-button>
         </div>
         <div class="content-container">
             <template v-if="noticeList.length > 0">
                 <ul v-infinite-scroll="load" :infinite-scroll-disabled="disabled" class="notice-list">
                     <li v-for="item in noticeList" :key="item.id" class="notice-item">
-                        {{ item.id }}
+                        <GroupNoticeItem :notice="item" :groupSetting="groupSetting" @edit="handleEditNotice"
+                            @remove="handleRemoveNotice" />
                     </li>
                 </ul>
             </template>
@@ -18,8 +18,8 @@
         </div>
     </div>
 
-    <el-dialog v-model="publishNewNoticeDialogVisible" title="发布新公告" width="400">
-        <div class="publish-new-notice-container" v-if="publishNewNoticeDialogVisible">
+    <el-dialog v-model="publishNewNoticeDialogVisible" title="发布新公告" width="400" @close="closePublishNewNoticeDialog">
+        <div class="publish-new-notice-container">
             <div class="input-content">
                 <el-input v-model="newNoticeContent" type="textarea" :rows="10" placeholder="请输入公告内容" show-word-limit
                     maxlength="500" autofocus resize="none"></el-input>
@@ -64,6 +64,7 @@ import { useRoute } from 'vue-router';
 import { useGroupStore } from '../store/groupStore'
 import { ElMessage } from 'element-plus';
 import { uploadImage, getByName } from "../api/image";
+import GroupNoticeItem from './GroupNoticeItem.vue';
 
 const route = useRoute()
 const groupStore = useGroupStore()
@@ -72,6 +73,10 @@ const noticeList = ref([])
 const pageNum = ref(1)
 const pageSize = ref(5)
 const disabled = ref(false)
+
+const groupSetting = computed(() => {
+    return groupStore.findMyGroupSettingByGroupId(route.params.groupId)
+})
 
 onBeforeMount(() => {
     groupStore.getNoticeListByGroupId(route.params.groupId, pageNum.value, pageSize.value).then((res) => {
@@ -111,6 +116,12 @@ const newNoticeImageUrl = ref('')
 
 const handlePublishNewNotice = () => {
     publishNewNoticeDialogVisible.value = true
+}
+
+const closePublishNewNoticeDialog = () => {
+    newNoticeContent.value = ''
+    newNoticeImageData.value = ''
+    newNoticeImageUrl.value = ''
 }
 
 const beforeImageUpload = (file) => {
@@ -153,6 +164,7 @@ const publishNewNotice = () => {
         return
     }
     const createNoticeData = {
+        noticeId: editNoticeId.value,
         groupId: route.params.groupId,
         content: newNoticeContent.value,
         imageUrl: newNoticeImageUrl.value
@@ -160,6 +172,10 @@ const publishNewNotice = () => {
     groupStore.publishNewNotice(createNoticeData).then((res) => {
         if (res.code == 200) {
             ElMessage.success('发布成功！')
+            if (editNoticeId.value) {
+                noticeList.value = noticeList.value.filter(notice => notice.id !== editNoticeId.value)
+                editNoticeId.value = ''
+            }
             noticeList.value.unshift(res.data)
             publishNewNoticeDialogVisible.value = false
         }
@@ -168,6 +184,27 @@ const publishNewNotice = () => {
     })
 }
 
+const editNoticeId = ref('')
+
+const handleEditNotice = (notice) => {
+    editNoticeId.value = notice.id
+    // 弹出编辑公告对话框
+    publishNewNoticeDialogVisible.value = true
+    newNoticeContent.value = notice.content
+    newNoticeImageUrl.value = notice.image
+    newNoticeImageData.value = notice.image
+}
+
+const handleRemoveNotice = (noticeId) => {
+    groupStore.removeNotice(noticeId).then((res) => {
+        if (res.code == 200) {
+            ElMessage.success('删除成功！')
+            noticeList.value = noticeList.value.filter(notice => notice.id !== noticeId)
+        }
+    }).catch((err) => {
+        ElMessage.error('删除失败！')
+    })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -183,15 +220,24 @@ const publishNewNotice = () => {
         justify-content: space-between;
         align-items: center;
         margin-bottom: 20px;
-
-        .title {
-            font-size: 18px;
-        }
+        justify-content: end;
     }
 
     .content-container {
         flex: 1;
         overflow-y: auto;
+
+        .notice-list {
+            padding: 0;
+            margin-bottom: 20px;
+
+            .notice-item {
+                list-style: none;
+                border-radius: 5px;
+                background-color: #fff;
+                margin-bottom: 10px;
+            }
+        }
     }
 }
 

@@ -66,7 +66,10 @@ const name = computed(() => {
     if (props.chatItem.recentChat.type == 0) {
         // 私聊
         const friend = friendStore.findFriendByUserId(props.chatItem.recentChat.toUserId)
-        return friend.remark || chatInfo.value.name
+        if (friend) {
+            return friend.remark || chatInfo.value.name
+        }
+        return chatInfo.value.name
     } else {
         // 群聊
         const groupSetting = groupStore.findMyGroupSettingByGroupId(props.chatItem.recentChat.groupId)

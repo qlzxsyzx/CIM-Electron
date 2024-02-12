@@ -5,8 +5,7 @@
     </div>
 
     <!-- 黑名单dialog -->
-    <el-dialog v-model="blackListDialog.visible" title="黑名单" width="40%" align-center
-        @closed="blackListDialog.visible = false" destroy-on-close>
+    <el-dialog v-model="blackListDialog.visible" title="黑名单" width="40%" align-center destroy-on-close @close="handleCloseDialog">
         <!-- 搜索框 -->
         <el-input v-model="blackListDialog.keyword" placeholder="输入账号搜索..." size="large" @keyup.enter="handleSearchUser">
             <template #append>
@@ -91,6 +90,10 @@ const handleRemoveBlackList = (row) => {
     }).catch(err => {
         ElMessage.error('移除失败')
     })
+}
+
+const handleCloseDialog = () => {
+    blackListDialog.keyword = ''
 }
 
 </script>

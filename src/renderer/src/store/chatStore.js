@@ -25,20 +25,30 @@ export const useChatStore = defineStore('chatStore', {
       return res
     },
     findRecentChatByToUserId(toUserId){
-      return this.recentChatList.find((item) => item.recentChat.toUserId == toUserId)
+      return this.recentChatList.find((item) => item.recentChat.toUserId === toUserId)
     },
     findRecentChatByGroupId(groupId) {
-      return this.recentChatList.find((item) => item.recentChat.groupId == groupId)
+      return this.recentChatList.find((item) => item.recentChat.groupId === groupId)
     },
     findRecentChatByRoomId(roomId) {
-      return this.recentChatList.find((item) => item.recentChat.roomId == roomId)
+      return this.recentChatList.find((item) => item.recentChat.roomId === roomId)
     },
     removeRecentChatByToUserId(toUserId) {
       this.recentChatList = this.recentChatList.filter(
         (item) => item.recentChat.toUserId !== toUserId
       )
       // 如果是当前会话
-      if (this.currentChatInfo.toUserId === toUserId) {
+      if (this.currentChatInfo.recentChat.toUserId === toUserId) {
+        this.currentChatInfo = {}
+        this.currentChatHistory = []
+      }
+    },
+    removeRecentChatByGroupId(groupId) {
+      this.recentChatList = this.recentChatList.filter(
+        (item) => item.recentChat.groupId !== groupId
+      )
+      // 如果是当前会话
+      if (this.currentChatInfo.recentChat.groupId === groupId) {
         this.currentChatInfo = {}
         this.currentChatHistory = []
       }
@@ -88,7 +98,7 @@ export const useChatStore = defineStore('chatStore', {
       const res = await createSingleChat(friendId)
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
-        this.currentChatInfo = res.data.recentChat
+        this.currentChatInfo = res.data
       }
       return res
     },
@@ -96,7 +106,7 @@ export const useChatStore = defineStore('chatStore', {
       const res = await createGroupChat(groupId)
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
-        this.currentChatInfo = res.data.recentChat
+        this.currentChatInfo = res.data
       }
       return res
     },

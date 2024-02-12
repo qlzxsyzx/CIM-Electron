@@ -7,7 +7,12 @@ import {
   updateGroupAvatar,
   getGroupMemberList,
   getNoticeListByGroupId,
-  publishNewNotice
+  publishNewNotice,
+  removeNotice,
+  dismissGroup,
+  exitGroup,
+  inviteFriendToJoinGroup,
+  removeGroupMember
 } from '../api/group'
 import { useChatStore } from './chatStore'
 
@@ -46,7 +51,12 @@ export const useGroupStore = defineStore('groupStore', {
     },
     // 获取群成员
     getMemberByGroupIdAndUserId(groupId, userId) {
-      return this.groupAndMembersMap.get(groupId).find((item) => item.userId === userId)
+      const memberMap = this.groupAndMembersMap.get(groupId)
+      if (!memberMap) {
+        return null
+      } else {
+        return memberMap.get(userId)
+      }
     },
     findGroupByGroupId(groupId) {
       return this.groupList.find((item) => item.id === groupId)
@@ -58,12 +68,10 @@ export const useGroupStore = defineStore('groupStore', {
       const res = await getGroupInfo(groupId)
       if (res.code === 200) {
         // 更新group信息
-        const group = this.findGroupByGroupId(groupId)
-        if (group) {
-          group.name = res.data.name
-          group.avatarUrl = res.data.avatarUrl
-        }
-        this.currnetGroupInfo = res.data
+        this.groupList = this.groupList.filter((item) => item.id !== groupId)
+        const group = res.data
+        this.groupList.push(group)
+        this.currnetGroupInfo = group
         if (res.data.groupSetting) {
           this.myGroupSettingMap.set(groupId, res.data.groupSetting)
         }
@@ -74,7 +82,7 @@ export const useGroupStore = defineStore('groupStore', {
       const res = await updateGroupAvatar(groupId, avatarUrl)
       if (res.code === 200) {
         // 更新group信息
-        const group = this.findGroupByGroupId(groupId)
+        const group = this.currnetGroupInfo
         if (group) {
           group.avatarUrl = avatarUrl
         }
@@ -85,7 +93,7 @@ export const useGroupStore = defineStore('groupStore', {
       const res = await updateGroupName(groupId, name)
       if (res.code === 200) {
         // 更新group信息
-        const group = this.findGroupByGroupId(groupId)
+        const group = this.currnetGroupInfo
         if (group) {
           group.name = name
         }
@@ -96,20 +104,18 @@ export const useGroupStore = defineStore('groupStore', {
       const res = await getGroupMemberList(groupId, pageNum, pageSize)
       if (res.code === 200) {
         // 更新group信息
-        let memberMap = this.groupAndMembersMap.get(groupId)
-        if (!memberMap) {
-          memberMap = new Map()
-        }
+        const memberMap = new Map()
         res.data.forEach((item) => {
           memberMap.set(item.userId, item)
         })
+        this.groupAndMembersMap.set(groupId, memberMap)
       }
       return res
     },
     async getNoticeListByGroupId(groupId, pageNum, pageSize) {
       const res = await getNoticeListByGroupId(groupId, pageNum, pageSize)
       if (res.code === 200) {
-        if(res.data && res.data.length > 0 && pageNum === 1 && this.currnetGroupInfo){
+        if (res.data && res.data.length > 0 && pageNum === 1 && this.currnetGroupInfo) {
           this.currnetGroupInfo.latestNotice = res.data[0]
         }
       }
@@ -118,9 +124,66 @@ export const useGroupStore = defineStore('groupStore', {
     async publishNewNotice(data) {
       const res = await publishNewNotice(data)
       if (res.code === 200) {
-        if(this.currnetGroupInfo){
+        if (this.currnetGroupInfo) {
           this.currnetGroupInfo.latestNotice = res.data
         }
+      }
+      return res
+    },
+    async removeNotice(id) {
+      const res = await removeNotice(id)
+      if (res.code === 200) {
+        if (
+          this.currnetGroupInfo &&
+          this.currnetGroupInfo.latestNotice &&
+          this.currnetGroupInfo.latestNotice.id === id
+        ) {
+          this.currnetGroupInfo.latestNotice = null
+        }
+      }
+      return res
+    },
+    async dismissGroup(id) {
+      const res = await dismissGroup(id)
+      if (res.code === 200) {
+        if (this.currnetGroupInfo && this.currnetGroupInfo.id === id) {
+          this.currnetGroupInfo = null
+        }
+        this.groupList = this.groupList.filter((item) => item.id !== id)
+        this.myGroupSettingMap.delete(id)
+        this.groupAndMembersMap.delete(id)
+        const chatStore = useChatStore()
+        chatStore.removeRecentChatByGroupId(id)
+      }
+      return res
+    },
+    async exitGroup(id) {
+      const res = await exitGroup(id)
+      if (res.code === 200) {
+        if (this.currnetGroupInfo && this.currnetGroupInfo.id === id) {
+          this.currnetGroupInfo = null
+        }
+        this.groupList = this.groupList.filter((item) => item.id !== id)
+        this.myGroupSettingMap.delete(id)
+        this.groupAndMembersMap.delete(id)
+        const chatStore = useChatStore()
+        chatStore.removeRecentChatByGroupId(id)
+      }
+      return res
+    },
+    async inviteFriendToJoinGroup(inviteData) {
+      const res = await inviteFriendToJoinGroup(inviteData)
+      if (res.code === 200) {
+        // 刷新成员信息
+        this.getGroupMemberList(inviteData.groupId, 1, 200)
+      }
+      return res
+    },
+    async kickGroupMember(kickData) {
+      const res = await removeGroupMember(kickData)
+      if (res.code === 200) {
+        // 刷新成员信息
+        this.getGroupMemberList(kickData.groupId, 1, 200)
       }
       return res
     }

@@ -1,6 +1,6 @@
 <template>
     <div class="friend-check-box-container" @click="handleClick">
-        <input class="friend-check-box" type="checkbox" :checked="props.checked" />
+        <input class="friend-check-box" type="checkbox" :checked="props.friend.disabled || props.checked" :disabled="props.friend.disabled"/>
         <el-avatar class="friend-check-box-avatar" :size="50" :src="userInfo.avatarUrl" />
         <span class="friend-check-box-name">{{ name }}</span>
     </div>
@@ -28,6 +28,7 @@ const name = computed(() => {
 })
 
 const handleClick = () => {
+    if(props.friend.disabled) return
     emit('check', props.friend)
 }
 </script>
@@ -87,6 +88,14 @@ const handleClick = () => {
             transition: transform 0.15s ease-in 0.05s;
             transform-origin: center;
         }
+    }
+
+    .friend-check-box:checked:disabled {
+        /* 调整边框颜色 */
+        border-color: #007bff;
+        /* 调整背景颜色 */
+        background-color: #007bff;
+        opacity: 0.5;
     }
 
     .friend-check-box-avatar {

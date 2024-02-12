@@ -66,6 +66,7 @@ const userInfo = computed(() => {
 })
 
 const name = computed(() => {
+    if (!currentChatInfo.value) return null
     if (currentChatInfo.value.type == 0) {
         // 私聊
         if (props.messageInfo.senderId === userStore.userInfo.userId) {
@@ -77,13 +78,24 @@ const name = computed(() => {
         }
     } else {
         // 群聊
-        const groupMember = groupStore.getMemberByGroupIdAndUserId(currentChatInfo.value.groupId,userInfo.value.userId)
+        const groupMember = groupStore.getMemberByGroupIdAndUserId(currentChatInfo.value.groupId, userInfo.value.userId)
         if (props.messageInfo.senderId === userStore.userInfo.userId) {
-            //自己
-            return groupMember.userNickName || userInfo.value.name
+            if (groupMember) {
+                //自己
+                return groupMember.userNickName || userInfo.value.name
+            } else {
+                return userInfo.value.name
+            }
         } else {
             const friend = friendStore.findFriendByUserId(item => item.friendId == userInfo.value.userId)
-            return friend.remark || groupMember.userNickName || userInfo.value.name
+            if (friend && friend.remark) {
+                return friend.remark
+            }
+            if (groupMember) {
+                return groupMember.userNickName || userInfo.value.name
+            } else {
+                return userInfo.value.name
+            }
         }
     }
 })
