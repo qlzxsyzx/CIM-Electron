@@ -28,7 +28,7 @@ export const useUserStore = defineStore("user", {
             return res
         },
         async getUserInfo() {
-            const res = await getUserInfo()
+            const res = await getUserInfo(this.tokenInfo.userId)
             if(res.code === 200){
                 this.userInfo = res.data
                 localStorage.setItem("cim.userInfo", JSON.stringify(res.data))

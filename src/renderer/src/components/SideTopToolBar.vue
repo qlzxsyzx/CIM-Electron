@@ -1,7 +1,7 @@
 <template>
-    <el-button :icon="Plus" color="#e6e8eb" dark class="tool-plus" @click="handleCreateGroupChatButton" title="创建会话"></el-button>
-    <el-dialog destroy-on-close v-model="createGroupChatDialogVisible" title="创建会话" width="800">
-        <CreateGroupChat v-model="createGroupChatDialogVisible"/>
+    <el-button :icon="Plus" color="#e6e8eb" dark class="tool-plus" @click="handleCreateGroupChatButton" title="创建群聊"></el-button>
+    <el-dialog destroy-on-close v-model="createGroupChatDialogVisible" title="创建群聊" width="800">
+        <CreateGroupChat @close="createGroupChatDialogVisible = false"/>
     </el-dialog>
 </template>
 

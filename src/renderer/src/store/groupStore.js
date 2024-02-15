@@ -43,9 +43,10 @@ export const useGroupStore = defineStore('groupStore', {
     async createGroup(createGroupData) {
       const res = await createGroup(createGroupData)
       if (res.code === 200) {
-        this.groupList.push(res.data.groupVo)
+        this.getGroupList()
         const chatStore = useChatStore()
         chatStore.recentChatList.push(res.data)
+        chatStore.recordCurrentChatInfo(res.data)
       }
       return res
     },

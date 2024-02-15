@@ -112,19 +112,14 @@ const reconnectCallBack = () => {
 onBeforeMount(() => {
     console.log('Layout onBeforeMount 获取所有数据');
     const userInfo = userStore.userInfo;
-    if (!userInfo) {
-        // 重新获取
-        userStore.getUserInfo().then(res => {
-            if (res.code == 200) {
-                console.log('获取用户数据成功')
-            }
-        }).catch(err => {
-            console.log('获取用户数据失败,请重新登录');
-            userStore.logout();
-            // 跳转到登录页面
-            window.location.href = '/login';
-        })
-    }
+    // 重新获取
+    userStore.getUserInfo().then(res => {
+        if (res.code == 200) {
+            console.log('获取用户数据成功')
+        }
+    }).catch(err => {
+        ElMessage.error('获取用户数据失败');
+    })
     // 获取好友
     friendStore.getFriendList()
     // 获取群组
@@ -133,17 +128,17 @@ onBeforeMount(() => {
     chatStore.getRecentChatList().then((res) => {
         if (res.code === 200) {
             const routeName = route.name
-            if(routeName === '个人聊天'){
+            if (routeName === '个人聊天') {
                 const recentChat = chatStore.findRecentChatByToUserId(route.params.userId)
                 chatStore.recordCurrentChatInfo(recentChat)
             }
-            if(routeName === '群会话'){
+            if (routeName === '群会话') {
                 const recentChat = chatStore.findRecentChatByGroupId(route.params.groupId)
                 chatStore.recordCurrentChatInfo(recentChat)
             }
         }
     })
-    
+
     const loginParam = {
         userId: userInfo.userId,
         userToken: userStore.tokenInfo.access_token,

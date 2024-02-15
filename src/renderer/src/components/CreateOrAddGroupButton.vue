@@ -1,95 +1,79 @@
 <template>
-    <div class="tool-container">
+    <div class="tool-container" @click="openCreateOrAddGroupDialog">
         <SvgIcon iconName="bg-add-group" class="tool-icon" />
         <div class="tool-name">创建/加入群组</div>
     </div>
 
-    <!-- 添加好友dialog -->
-    <el-dialog v-model="addFriendDialog.visible" title="添加好友" width="30%" align-center @closed="closeAddFriendDialog">
-        <!-- 搜索好友框 -->
-        <el-input v-model="addFriendDialog.username" placeholder="输入账号搜索..." size="large" @keyup.enter="handleSearchUser">
-            <template #append>
-                <el-button :icon="Search" class="append-button" @click="handleSearchUser" />
-            </template>
-        </el-input>
-        <!-- 用户展示 -->
-        <div class="search-result-container">
-            <template v-if="addFriendDialog.result">
-                <div class="search-result">
-                    <el-avatar :size="60" :src="addFriendDialog.result.avatarUrl" />
-                    <div class="search-result-info">
-                        <span class="info-name"> {{ addFriendDialog.result.name }} </span>
-                        <span class="info-username">账号： {{ addFriendDialog.result.username }}</span>
-                    </div>
-                    <!-- todo:可以从store查询是否已是好友，而提示 -->
-                    <div class="search-result-operation">
-                        <el-button type="primary" @click="handleAddFirend">添加</el-button>
-                    </div>
+    <!-- 创建/加入群组dialog -->
+    <el-dialog v-model="rootDialogVisible" title="创建/加入群组" width="50%" align-center>
+        <el-tabs v-model="activeTab" class="tabs">
+            <el-tab-pane label="创建群组" name="createGroup">
+                <CreateGroupChat v-if="rootDialogVisible" @close="rootDialogVisible = false" />
+            </el-tab-pane>
+            <el-tab-pane label="加入群组" name="joinGroup">
+                <!-- 搜索框 -->
+                <el-input v-model="searchValue" placeholder="输入群号搜索..." size="large" @keyup.enter="handleSearchGroup">
+                    <template #append>
+                        <el-button :icon="Search" class="append-button" @click="handleSearchGroup" />
+                    </template>
+                </el-input>
+                <div class="search-result-container">
+                    <template v-if="result">
+                        <template v-if="result.roomId">
+                            <MyGroupInfo :groupInfo="result"/>
+                        </template>
+                        <template v-else>
+                            <NotMemberGroupInfo :groupInfo="result"/>
+                        </template>
+                    </template>
+                    <template v-else-if="!isFirstSearch">
+                        <el-empty description="未找到相关群组" />
+                    </template>
                 </div>
-            </template>
-            <template v-else-if="!addFriendDialog.isFirstSearch">
-                <p>未找到用户</p>
-            </template>
-        </div>
+            </el-tab-pane>
+        </el-tabs>
     </el-dialog>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { searchByUsername } from '../api/friend'
+import { useGroupStore } from '../store/groupStore'
 import { ElMessage } from 'element-plus';
-import { validUsername } from '../assets/js/regex-validate';
+import { validId } from '../assets/js/regex-validate';
 import { useUserStore } from '../store/userStore';
+import CreateGroupChat from './CreateGroupChat.vue';
+import NotMemberGroupInfo from './NotMemberGroupInfo.vue';
+import MyGroupInfo from './MyGroupInfo.vue';
+import { Search } from '@element-plus/icons-vue';
 
 const userStore = useUserStore()
+const groupStore = useGroupStore();
 
-const addFriendDialog = reactive({
-    visible: false,
-    username: '',
-    result: {
-        avatarUrl: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
-        username: '123456',
-        name: '张三'
-    },
-    isFirstSearch: true,
-})
+const rootDialogVisible = ref(false)
+const activeTab = ref('createGroup')
 
-const handleOpenAddFirend = () => {
-    addFriendDialog.visible = true;
+const openCreateOrAddGroupDialog = () => {
+    rootDialogVisible.value = true
 }
 
-const handleSearchUser = () => {
-    // 校验username
-    if (!validUsername(addFriendDialog.username)) {
-        ElMessage.error('账号只能由数字字母构成且长度为4-10');
+const searchValue = ref('')
+const isFirstSearch = ref(true)
+const result = ref(null)
+
+const handleSearchGroup = () => {
+    if (!validId(searchValue.value)) {
+        ElMessage.error('群号为数字且长度为16-20');
         return;
     }
-    addFriendDialog.isFirstSearch = false;
+    isFirstSearch.value = false;
     // 发送搜索请求
-    searchByUsername(addFriendDialog.username).then(res => {
+    groupStore.getGroupInfo(searchValue.value).then(res => {
         if (res.code === 200) {
-            addFriendDialog.result = res.data;
-        } else {
-            addFriendDialog.result = null;
+            result.value = res.data;
         }
     }).catch(err => {
-        addFriendDialog.result = null;
+        ElMessage.error('获取数据失败');
     })
-}
-
-const closeAddFriendDialog = () => {
-    addFriendDialog.username = '';
-    addFriendDialog.result = null;
-    addFriendDialog.isFirstSearch = true;
-}
-
-const handleAddFirend = () => {
-    // 发送添加好友请求
-    const addFirendVo = {
-        userId: userStore.userInfo.userId,
-        addFriendUserId: addFriendDialog.result.userId
-    }
-
 }
 </script>
 
@@ -115,43 +99,17 @@ const handleAddFirend = () => {
         font-weight: bold;
         color: #7a7a7a;
     }
+
+    .tabs {
+        width: 100%;
+        height: 600px;
+    }
 }
 
 .search-result-container {
     margin-top: 10px;
-
-    .search-result {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        padding: 10px;
-        border-bottom: 1px solid #ccc;
-
-        &:hover {
-            background-color: #dedfe0;
-        }
-
-        .search-result-info {
-            margin-left: 10px;
-            display: flex;
-            flex-direction: column;
-
-            .info-name {
-                font-size: 18px;
-                font-weight: bold;
-                color: #333333;
-            }
-
-            .info-username {
-                font-size: 14px;
-                color: #7a7a7a;
-                margin-top: 5px;
-            }
-        }
-
-        .search-result-operation {
-            margin-left: auto;
-        }
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 </style>

@@ -27,3 +27,9 @@ export const validGroupName = (name) => {
     const reg = /^\S{1,20}$/;
     return reg.test(name);
 }
+
+export const validId = (id) => {
+    // id为数字且长度为16-20
+    const reg = /^\d{16,20}$/;
+    return reg.test(id);
+}

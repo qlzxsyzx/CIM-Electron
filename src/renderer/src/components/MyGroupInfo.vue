@@ -110,7 +110,7 @@
                 </el-icon>
                 <label>群介绍</label>
             </div>
-            <div class="content">
+            <div class="content" @click="handleOpenDescription">
                 <span>{{ description }}</span>
                 <el-icon class="icon">
                     <ArrowRight />
@@ -122,7 +122,7 @@
                 <SvgIcon style="height: 1em;width: 1em;fill: black;" iconName="horn" />
                 <label>群公告</label>
             </div>
-            <div class="content">
+            <div class="content" @click="handleClickNoticeDialog">
                 <span>{{ notice }}</span>
                 <el-icon class="icon">
                     <ArrowRight />
@@ -147,6 +147,15 @@
             </ButtonBox>
         </div>
     </div>
+    <!-- 群介绍 -->
+    <el-dialog v-model="descriptionDialogVisible" title="群介绍" width="30%" align-center destroy-on-close>
+        <div class="description-container">
+            <p>{{ description }}</p>
+        </div>
+    </el-dialog>
+    <el-dialog v-model="noticeDialogVisible" title="群公告" width="400" destroy-on-close>
+        <GroupNotice />
+    </el-dialog>
 </template>
 
 <script setup>
@@ -159,6 +168,7 @@ import { ref, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { validRemark, validGroupName } from '../assets/js/regex-validate'
 import { updateGroupRemark, updateUserNickName, updateGroupPromptStatus } from '../api/group'
+import GroupNotice from '../components/GroupNotice.vue';
 import CropperAvatar from './CropperAvatar.vue';
 
 const props = defineProps(['groupInfo'])
@@ -438,6 +448,19 @@ const handleClickMessage = (group) => {
     }
 }
 
+const descriptionDialogVisible = ref(false)
+
+const handleOpenDescription = () => {
+    descriptionDialogVisible.value = true
+}
+
+const noticeDialogVisible = ref(false)
+
+const handleClickNoticeDialog = () => {
+    noticeDialogVisible.value = true
+}
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -566,5 +589,11 @@ const handleClickMessage = (group) => {
         margin-top: 10px;
         justify-items: center;
     }
+}
+
+.description-container {
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
 }
 </style>

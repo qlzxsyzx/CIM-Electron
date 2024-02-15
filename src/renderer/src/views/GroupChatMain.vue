@@ -43,12 +43,12 @@
                             </div>
                         </div>
                         <div class="input-area" id="input-area" ref="inputArea">
-                            <div class="message-input" id="message-input" ref="messageInput" @paste="handleInputPaste"
+                            <div class="message-input" :class="{'disabled': group.noSpeak === 1 && isEmpty }" id="message-input" ref="messageInput" @input="handleInput" @paste="handleInputPaste"
                                 contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
                                 @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
                         </div>
                         <div class="control-area">
-                            <el-button type="primary" @click="handleSendMesage">发送</el-button>
+                            <el-button type="primary" @click="handleSendMesage" :disabled="group.noSpeak === 1">发送</el-button>
                         </div>
                     </div>
                 </div>
@@ -389,6 +389,7 @@ const scrollToBottom = async () => {
 const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
+const isEmpty = ref(true)
 
 const fileUploadCallback = (file) => {
     // 粘贴的是文件，创建文件发送消息
@@ -410,6 +411,12 @@ const fileUploadCallback = (file) => {
     })
     messageInput.value.focus()
 }
+
+const handleInput = (e) => {
+    const value = messageInput.value.innerHTML
+    isEmpty.value = value === ''
+}
+
 
 const handleInputPaste = (e) => {
     e.preventDefault()
@@ -489,6 +496,9 @@ const imgSrctoFile = (src, filename) => {
 }
 
 const handleSendMesage = async () => {
+    if(group.value.noSpeak === 1) {
+        return ElMessage.warning('该群组禁止发言')
+    }
     const message = messageInput.value.innerHTML
     if (!message) return
     const encodeMessage = encodeHtmlToMessage(message)
@@ -702,6 +712,12 @@ function restoreSelection() {
                         word-wrap: break-word;
                         word-break: break-all;
                         line-height: 25px;
+
+                        &.disabled::before {
+                            // placeholder样式
+                            color: var(--el-text-color-placeholder);
+                            content: '全员禁言中';
+                        }
                     }
                 }
 

@@ -51,7 +51,23 @@ useReconnect(() => {
 })
 
 const recentChatList = computed(() => {
-    return chatStore.recentChatList
+    return chatStore.recentChatList.sort((a, b) => {
+        if (a.recentChat.top > b.recentChat.top){
+            return -1
+        }
+        if (a.recentChat.top < b.recentChat.top){
+            return 1
+        }
+        let atime = a.recentChat.createTime
+        let btime = b.recentChat.createTime
+        if (a.lastMessage) {
+            atime = a.lastMessage.createTime
+        }
+        if (b.lastMessage) {
+            btime = b.lastMessage.createTime
+        }
+        return btime - atime
+    })
 })
 
 const currentChatInfo = computed(() => {

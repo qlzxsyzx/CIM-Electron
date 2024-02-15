@@ -153,3 +153,67 @@ export function exitGroup(groupId) {
     method: 'post'
   })
 }
+
+export function searchGroupById(groupId) {
+  return request({
+    url: '/im-web/group/searchGroupById/' + groupId,
+    method: 'get'
+  })
+}
+
+export function getGroupNotificationList(pageNum, pageSize) {
+  return request({
+    url: '/im-web/group/getGroupNotificationList/' + pageNum + '/' + pageSize,
+    method: 'get'
+  })
+}
+
+export function applyAddGroup(applyData) {
+  return request({
+    url: '/im-web/group/applyAddGroup',
+    method: 'post',
+    data: applyData
+  })
+}
+
+export function agreeJoinGroupApply(groupNotificationId) {
+  return request({
+    url: '/im-web/group/agreeJoinGroupApply/' + groupNotificationId,
+    method: 'post'
+  })
+}
+
+export function refuseJoinGroupApply(groupNotificationId) {
+  return request({
+    url: '/im-web/group/refuseJoinGroupApply/' + groupNotificationId,
+    method: 'post'
+  })
+}
+
+export function agreeGroupInvite(groupNotificationId) {
+  return request({
+    url: '/im-web/group/agreeGroupInvite/' + groupNotificationId,
+    method: 'post'
+  })
+}
+
+export function refuseGroupInvite(groupNotificationId) {
+  return request({
+    url: '/im-web/group/refuseGroupInvite/' + groupNotificationId,
+    method: 'post'
+  })
+}
+
+export function deleteGroupNotification(groupNotificationId) {
+  return request({
+    url: '/im-web/group/deleteGroupNotification/' + groupNotificationId,
+    method: 'post'
+  })
+}
+
+export function getMemberInfo(groupId,userId) {
+  return request({
+    url: '/im-web/group/getMemberInfo/'+ groupId + '/' + userId,
+    method: 'get'
+  })
+}

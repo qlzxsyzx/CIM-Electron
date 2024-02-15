@@ -1,5 +1,5 @@
 <template>
-    <div v-if="chatInfo" class="chat-item-container" :class="{ 'click': isClick }">
+    <div v-if="chatInfo" class="chat-item-container" :class="{ 'top': props.chatItem.recentChat.top, 'click': isClick }">
         <div class="item-avatar-container">
             <template v-if="props.chatItem.recentChat.unreadCount > 0">
                 <el-badge :value="props.chatItem.recentChat.unreadCount" :max="99" class="item-tip">
@@ -44,7 +44,7 @@ const friendStore = useFriendStore()
 const groupStore = useGroupStore()
 
 const currentChatInfo = computed(() => {
-    if(!chatStore.currentChatInfo) return null
+    if (!chatStore.currentChatInfo) return null
     return chatStore.currentChatInfo.recentChat
 })
 
@@ -81,7 +81,7 @@ const name = computed(() => {
 })
 
 const isClick = computed(() => {
-    if(!currentChatInfo.value) return false
+    if (!currentChatInfo.value) return false
     return currentChatInfo.value.roomId === props.chatItem.recentChat.roomId
 })
 
@@ -145,6 +145,10 @@ const lastMessageTime = computed(() => {
         100% {
             background-color: white;
         }
+    }
+
+    &.top {
+        background-color: rgba($color: #5f5f5f27, $alpha: 0.1);
     }
 
     &.click {

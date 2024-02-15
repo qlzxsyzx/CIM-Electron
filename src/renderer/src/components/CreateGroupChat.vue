@@ -61,7 +61,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['close'])
 
 const groupStore = useGroupStore()
 const friendStore = useFriendStore()
@@ -136,12 +136,11 @@ const handleRemoveFriend = (friend) => {
 }
 
 const handleClickCancel = () => {
-    emit('update:modelValue', false)
+    emit('close')
 }
 
 
 const handleClickCreateGroupChat = () => {
-    console.log('create group chat')
     if (!createGroupFormRef.value) return
     createGroupFormRef.value.validate((valid) => {
         if (valid) {
@@ -149,7 +148,7 @@ const handleClickCreateGroupChat = () => {
             const createGroupData = {
                 avatarUrl: createGroupForm.dataInfo.img,
                 name: createGroupForm.name,
-                memberList: chooseFriends.value.map(item => item.userVo.userId)
+                memberList: chooseFriends.value.map(item => item.friendId)
             }
             groupStore.createGroup(createGroupData).then(res => {
                 if (res.code === 200) {
@@ -158,12 +157,12 @@ const handleClickCreateGroupChat = () => {
                         message: '创建成功',
                         type: 'success',
                     })
-                    emit('update:modelValue', false)
+                    emit('close')
                     // todo：跳转至chat页面
                     if (res.data.type == 0) {
-                        router.push({ path: '/chat/single/' + res.data.roomId })
+                        router.push({ path: '/chat/single/' + res.data.recentChat.toUserId })
                     } else {
-                        router.push({ path: '/chat/group/' + res.data.roomId })
+                        router.push({ path: '/chat/group/' + res.data.recentChat.groupId })
                     }
                 } else {
                     isLoad.value = false
@@ -174,7 +173,6 @@ const handleClickCreateGroupChat = () => {
             })
         } else {
             ElMessage.error('请填写正确信息')
-            console.log('error submit!')
             return false
         }
     })
@@ -187,7 +185,7 @@ const handleClickCreateGroupChat = () => {
     display: flex;
     flex-direction: row;
     justify-content: center;
-    height: 400px;
+    height: 500px;
     width: 100%;
 
     .container-left {

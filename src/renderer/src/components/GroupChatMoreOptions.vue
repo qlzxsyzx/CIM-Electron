@@ -122,6 +122,10 @@
     <el-dialog v-model="inviteDialogVisible" title="邀请好友" width="50%" append-to-body>
         <GroupInvite v-if="inviteDialogVisible" :groupId="group.id" @close="handleCloseInvite"/>
     </el-dialog>
+    <!-- 移除dialog -->
+    <el-dialog v-model="kickDialogVisible" width="50%" append-to-body>
+        <GroupKick v-if="kickDialogVisible" :groupId="group.id" @close="handleCloseKick"/>
+    </el-dialog>
 </template>
 <script setup>
 import { ref, computed, onBeforeMount } from 'vue';
@@ -136,6 +140,7 @@ import { validRemark, validGroupName } from '../assets/js/regex-validate'
 import ButtonBox from '../components/ButtonBox.vue';
 import TransferGroup from '../components/TransferGroup.vue';
 import GroupInvite from '../components/GroupInvite.vue';
+import GroupKick from '../components/GroupKick.vue';
 
 const router = useRouter();
 const chatStore = useChatStore();
@@ -190,8 +195,14 @@ const handleCloseInvite = () => {
     inviteDialogVisible.value = false;
 }
 
-const handleRemoveMember = () => {
+const kickDialogVisible = ref(false);
 
+const handleRemoveMember = () => {
+    kickDialogVisible.value = true;
+}
+
+const handleCloseKick = () => {
+    kickDialogVisible.value = false;
 }
 
 const handleModifyGroupName = () => {

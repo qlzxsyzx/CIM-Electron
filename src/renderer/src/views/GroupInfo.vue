@@ -1,10 +1,15 @@
 <template>
     <div class="group-info-container" v-loading="isLoading">
-        <template v-if="currentGroup.roomId">
-            <MyGroupInfo :groupInfo="currentGroup"/>
+        <template v-if="!isLoading">
+            <template v-if="currentGroup.roomId">
+                <MyGroupInfo :groupInfo="currentGroup" />
+            </template>
+            <template v-else>
+                <NotMemberGroupInfo :groupInfo="currentGroup" />
+            </template>
         </template>
         <template v-else>
-            <div class="no-group-info">暂无群组信息</div>
+            <div class="no-group-info">未找到群组信息</div>
         </template>
     </div>
 </template>
@@ -15,6 +20,7 @@ import { useGroupStore } from '../store/groupStore'
 import { ref, onBeforeMount } from 'vue';
 import { ElMessage } from 'element-plus';
 import MyGroupInfo from '../components/MyGroupInfo.vue';
+import NotMemberGroupInfo from '../components/NotMemberGroupInfo.vue';
 
 const route = useRoute();
 const groupStore = useGroupStore();

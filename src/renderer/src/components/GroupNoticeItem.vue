@@ -49,12 +49,13 @@ import { useRoute } from 'vue-router';
 import { useGroupStore } from '../store/groupStore'
 import { useFriendStore } from '../store/friendStore';
 import { formatLocalDateTimeToText } from '../assets/js/format';
+import { getMemberInfo } from '../api/group';
 
 
 const groupStore = useGroupStore()
 const friendStore = useFriendStore();
 const props = defineProps(['notice', 'groupSetting'])
-const emits = defineEmits(['edit','remove'])
+const emits = defineEmits(['edit', 'remove'])
 
 const text = ref(null)
 const contentSpan = ref(null)
@@ -67,7 +68,7 @@ onMounted(() => {
     const height = contentSpan.value.offsetHeight
     if (height > 100) {
         isNeedExpand.value = true
-    }else {
+    } else {
         isNeedExpand.value = false
     }
 })
@@ -85,11 +86,11 @@ const handleUpClose = () => {
 
 // 修改公告
 const handleEditNotice = () => {
-    emits('edit',props.notice)
+    emits('edit', props.notice)
 }
 
 const handleRemoveNotice = () => {
-    emits('remove',props.notice.id)
+    emits('remove', props.notice.id)
 }
 
 const getMemberName = (item) => {
@@ -98,7 +99,16 @@ const getMemberName = (item) => {
     if (friend) {
         return friend.remark || member.userNickName || member.userInfo.name;
     } else {
-        return member.userNickName || member.userInfo.name;
+        if (member) {
+            return member.userNickName || member.userInfo.name;
+        } else {
+            getMemberInfo(item.groupId, item.userId).then(res => {
+                if (res.code === 200) {
+                    return res.data.userNickName || res.data.remark || res.data.name
+                }
+            })
+            return ''
+        }
     }
 }
 </script>

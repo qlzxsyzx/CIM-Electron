@@ -14,6 +14,7 @@
             </div>
             <div class="tool-grid">
                 <NewFriendButton/>
+                <GroupNotificationButton/>
                 <AddFriendButton/>
                 <CreateOrAddGroupButton/>
                 <BlackListButton/>
@@ -30,6 +31,7 @@ import AddFriendButton from '../components/AddFriendButton.vue'
 import BlackListButton from '../components/BlackListButton.vue';
 import CreateOrAddGroupButton from '../components/CreateOrAddGroupButton.vue'
 import SettingButton from '../components/SettingButton.vue'
+import GroupNotificationButton from '../components/GroupNotificationButton.vue';
 
 </script>
 
