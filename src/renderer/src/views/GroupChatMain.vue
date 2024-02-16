@@ -43,12 +43,14 @@
                             </div>
                         </div>
                         <div class="input-area" id="input-area" ref="inputArea">
-                            <div class="message-input" :class="{'disabled': group.noSpeak === 1 && isEmpty }" id="message-input" ref="messageInput" @input="handleInput" @paste="handleInputPaste"
+                            <div class="message-input" :class="{ 'disabled': group.noSpeak === 1 && isEmpty }"
+                                id="message-input" ref="messageInput" @input="handleInput" @paste="handleInputPaste"
                                 contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
                                 @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
                         </div>
                         <div class="control-area">
-                            <el-button type="primary" @click="handleSendMesage" :disabled="group.noSpeak === 1">发送</el-button>
+                            <el-button type="primary" @click="handleSendMesage"
+                                :disabled="group.noSpeak === 1">发送</el-button>
                         </div>
                     </div>
                 </div>
@@ -90,7 +92,7 @@
     </div>
     <div class="el-overlay" v-show="moreOptionsVisible" style="opacity: 0;" @click="moreOptionsVisible = false"></div>
     <el-dialog v-model="noticeDialogVisible" title="群公告" width="400">
-        <GroupNotice />
+        <GroupNotice v-if="noticeDialogVisible"/>
     </el-dialog>
 </template>
 
@@ -496,7 +498,7 @@ const imgSrctoFile = (src, filename) => {
 }
 
 const handleSendMesage = async () => {
-    if(group.value.noSpeak === 1) {
+    if (group.value.noSpeak === 1) {
         return ElMessage.warning('该群组禁止发言')
     }
     const message = messageInput.value.innerHTML
@@ -670,18 +672,18 @@ function restoreSelection() {
             flex-direction: column;
 
             .main-view-container {
-                flex: 1;
+                height: 60%;
+                max-height: 60%;
                 width: 100%;
                 overflow-y: auto;
                 margin-bottom: 10px;
-                min-height: 400px;
             }
 
             .main-footer-container {
                 display: flex;
                 flex-direction: column;
                 width: 100%;
-                height: 30%;
+                height: 40%;
                 border-top: 1px solid var(--el-color-info-light-5);
 
                 .tool-area {
@@ -707,17 +709,11 @@ function restoreSelection() {
 
                     .message-input {
                         margin: 0 10px;
-                        min-height: 100%;
                         outline: 0 !important;
                         word-wrap: break-word;
                         word-break: break-all;
                         line-height: 25px;
-
-                        &.disabled::before {
-                            // placeholder样式
-                            color: var(--el-text-color-placeholder);
-                            content: '全员禁言中';
-                        }
+                        height: 100%;
                     }
                 }
 
@@ -728,76 +724,76 @@ function restoreSelection() {
                 }
             }
         }
+    }
 
-        .main-chat-container-right {
-            width: 200px;
-            height: 100%;
-            border-left: 1px solid var(--el-color-info-light-5);
+    .main-chat-container-right {
+        width: 200px;
+        height: 100%;
+        border-left: 1px solid var(--el-color-info-light-5);
+        display: flex;
+        flex-direction: column;
+
+        .group-notice-container {
+            height: 200px;
             display: flex;
             flex-direction: column;
+            padding: 20px 10px;
+            border-bottom: 1px solid var(--el-color-info-light-5);
+            cursor: default;
 
-            .group-notice-container {
-                height: 200px;
+            .notice-title {
+                margin-bottom: 10px;
+                height: 30px;
                 display: flex;
-                flex-direction: column;
-                padding: 20px 10px;
-                border-bottom: 1px solid var(--el-color-info-light-5);
-                cursor: default;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
 
-                .notice-title {
-                    margin-bottom: 10px;
-                    height: 30px;
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
-                    align-items: center;
-                }
+            .notice-content {
+                flex: 1;
+                max-height: 150px;
+                max-width: 180px;
+                color: var(--el-color-info);
+                font-size: 14px;
+                line-height: 25px;
+                overflow: hidden;
+                word-wrap: break-word;
+                display: -webkit-box;
+                -webkit-line-clamp: 6;
+                -webkit-box-orient: vertical;
+            }
+        }
 
-                .notice-content {
-                    flex: 1;
-                    max-height: 150px;
-                    max-width: 180px;
-                    color: var(--el-color-info);
-                    font-size: 14px;
-                    line-height: 25px;
-                    overflow: hidden;
-                    word-wrap: break-word;
-                    display: -webkit-box;
-                    -webkit-line-clamp: 6;
-                    -webkit-box-orient: vertical;
+        .group-member-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 10px;
+            height: calc(100% - 240px);
+
+            .member-title {
+                margin-bottom: 10px;
+                height: 30px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+
+                .icon {
+                    cursor: pointer;
+
+                    &:hover {
+                        color: var(--el-color-primary);
+                    }
                 }
             }
 
-            .group-member-container {
-                flex: 1;
+            .member-list {
                 display: flex;
                 flex-direction: column;
-                padding: 20px 10px;
-                height: calc(100% - 240px);
-
-                .member-title {
-                    margin-bottom: 10px;
-                    height: 30px;
-                    display: flex;
-                    flex-direction: row;
-                    justify-content: space-between;
-                    align-items: center;
-
-                    .icon {
-                        cursor: pointer;
-
-                        &:hover {
-                            color: var(--el-color-primary);
-                        }
-                    }
-                }
-
-                .member-list {
-                    display: flex;
-                    flex-direction: column;
-                    overflow-y: auto;
-                    height: calc(100% - 40px);
-                }
+                overflow-y: auto;
+                height: calc(100% - 40px);
             }
         }
     }

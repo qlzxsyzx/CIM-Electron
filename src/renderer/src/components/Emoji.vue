@@ -4,7 +4,7 @@
         <div class="emoji-title">全部表情</div>
         <div class="all-emoji">
             <div class="emoji-item" @click="appendEmoji(item)" v-for="(item, index) in images" :key="index">    
-                <img :src="item.url" :alt="item.name" :title="item.name">
+                <img :src="item.url" :alt="item.name" :title="item.name" class="cim-emoji">
             </div>
         </div>
     </div>

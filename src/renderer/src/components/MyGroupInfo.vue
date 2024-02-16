@@ -148,10 +148,29 @@
         </div>
     </div>
     <!-- 群介绍 -->
-    <el-dialog v-model="descriptionDialogVisible" title="群介绍" width="30%" align-center destroy-on-close>
-        <div class="description-container">
-            <p>{{ description }}</p>
-        </div>
+    <el-dialog v-model="descriptionDialogVisible" title="群介绍" width="30%" align-center destroy-on-close
+        @closed="handleCloseDescriptionDialog">
+        <template v-if="isUpdateDescription">
+            <el-input v-model="newDescription" type="textarea" :rows="10" placeholder="请输入群介绍内容" show-word-limit
+                maxlength="500" autofocus resize="none"></el-input>
+        </template>
+        <template v-else>
+            <template v-if="groupSetting.role === 3">
+                <div class="title-container">
+                    <el-button type="primary" @click="openUpdateGroupDescription">修改群介绍</el-button>
+                </div>
+            </template>
+            <div class="description-container">
+                <p>{{ description }}</p>
+            </div>
+        </template>
+
+        <template #footer>
+            <div class="dialog-footer" v-if="isUpdateDescription">
+                <el-button @click="descriptionDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="handlerUpdateGroupDescription">确认</el-button>
+            </div>
+        </template>
     </el-dialog>
     <el-dialog v-model="noticeDialogVisible" title="群公告" width="400" destroy-on-close>
         <GroupNotice />
@@ -167,7 +186,7 @@ import { useUserInfoStore } from '../store/userInfoStore';
 import { ref, computed, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { validRemark, validGroupName } from '../assets/js/regex-validate'
-import { updateGroupRemark, updateUserNickName, updateGroupPromptStatus } from '../api/group'
+import { updateGroupRemark, updateUserNickName, updateGroupPromptStatus, updateGroupDescription } from '../api/group'
 import GroupNotice from '../components/GroupNotice.vue';
 import CropperAvatar from './CropperAvatar.vue';
 
@@ -454,6 +473,32 @@ const handleOpenDescription = () => {
     descriptionDialogVisible.value = true
 }
 
+const isUpdateDescription = ref(false)
+const newDescription = ref('')
+
+const openUpdateGroupDescription = () => {
+    newDescription.value = currentGroupInfo.value.description
+    isUpdateDescription.value = true
+}
+
+const handleCloseDescriptionDialog = () => {
+    isUpdateDescription.value = false
+    newDescription.value = ''
+}
+
+const handlerUpdateGroupDescription = () => {
+    updateGroupDescription(currentGroupInfo.value.id, newDescription.value).then(res => {
+        if (res.code == 200) {
+            ElMessage.success('修改成功')
+            currentGroupInfo.value.description = newDescription.value
+            isUpdateDescription.value = false
+            newDescription.value = ''
+        }
+    }).catch(err => {
+        ElMessage.error('修改失败')
+    })
+}
+
 const noticeDialogVisible = ref(false)
 
 const handleClickNoticeDialog = () => {
@@ -589,6 +634,14 @@ const handleClickNoticeDialog = () => {
         margin-top: 10px;
         justify-items: center;
     }
+}
+
+.title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    justify-content: end;
 }
 
 .description-container {

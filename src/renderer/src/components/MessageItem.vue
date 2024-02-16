@@ -116,8 +116,6 @@ const type = computed(() => {
             return "text";
     }
 })
-
-
 </script>
 
 <style scoped lang="scss">

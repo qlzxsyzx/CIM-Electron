@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import {login} from "../api/login"
-import { getUserInfo } from "../api/user";
+import { getUserInfo,updateUserName,updateUserAvatar,updateUserGender,updateUserPassword } from "../api/user";
 
 export const useUserStore = defineStore("user", {
     state: () => {
@@ -40,6 +40,31 @@ export const useUserStore = defineStore("user", {
             localStorage.removeItem("cim.userInfo")
             localStorage.removeItem("cim.tokenInfo")
             this.isLogin = false
+        },
+        async updateUserName(data){
+            const res = await updateUserName(data)
+            if(res.code === 200){
+                this.userInfo.name = data.name
+            }
+            return res
+        },
+        async updateUserAvatar(data){
+            const res = await updateUserAvatar(data)
+            if(res.code === 200){
+                this.userInfo.avatarUrl = data.avatarUrl
+            }
+            return res
+        },
+        async updateUserGender(gender){
+            const res = await updateUserGender(gender)
+            if(res.code === 200){
+                this.userInfo.gender = gender
+            }
+            return res
+        },
+        async updateUserPassword(data){
+            const res = await updateUserPassword(data)
+            return res
         }
     }
 })

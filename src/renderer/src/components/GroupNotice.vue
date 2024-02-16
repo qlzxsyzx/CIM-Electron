@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount } from 'vue';
+import { ref, computed, onBeforeMount, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useGroupStore } from '../store/groupStore'
 import { ElMessage } from 'element-plus';
@@ -79,6 +79,8 @@ const groupSetting = computed(() => {
 })
 
 onBeforeMount(() => {
+    // 对img元素进行点击事件监听，实现图片预览功能
+    // document.addEventListener('dblclick', dbclickImage)
     groupStore.getNoticeListByGroupId(route.params.groupId, pageNum.value, pageSize.value).then((res) => {
         if (res.code === 200) {
             noticeList.value = res.data
@@ -204,6 +206,14 @@ const handleRemoveNotice = (noticeId) => {
     }).catch((err) => {
         ElMessage.error('删除失败！')
     })
+}
+
+const imageViewerVisible = ref(false)
+const imageUrl = ref([])
+
+const openImageViewer = (url) => {
+    imageViewerVisible.value = true
+    imageUrl.value = [url]
 }
 </script>
 

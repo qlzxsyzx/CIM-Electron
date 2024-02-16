@@ -182,7 +182,7 @@ const handleScroll = () => {
     }
     // 判断是否滚动到顶部-50,滚到就获取更多消息
     if (scrollTop <= 50 && chatMessageList.value.length >= 10) {
-        console.log('滚动到顶部',scrollTop)
+        console.log('滚动到顶部', scrollTop)
         isTop.value = true
     } else {
         isTop.value = false
@@ -456,7 +456,7 @@ function restoreSelection() {
 
     .main-chat-container {
         display: flex;
-        flex: 1;
+        height: calc(100% - 101px);
         flex-direction: column;
         position: relative;
 
@@ -466,18 +466,18 @@ function restoreSelection() {
         }
 
         .main-view-container {
-            flex: 1;
+            height: 60%;
+            max-height: 60%;
             width: 100%;
             overflow-y: auto;
             margin-bottom: 10px;
-            min-height: 400px;
         }
 
         .main-footer-container {
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 30%;
+            height: 40%;
             border-top: 1px solid var(--el-color-info-light-5);
 
             .tool-area {
@@ -503,11 +503,11 @@ function restoreSelection() {
 
                 .message-input {
                     margin: 0 10px;
-                    min-height: 100%;
                     outline: 0 !important;
                     word-wrap: break-word;
                     word-break: break-all;
                     line-height: 25px;
+                    height: 100%;
                 }
             }
 

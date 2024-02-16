@@ -51,6 +51,17 @@ export function updateGroupPromptStatus(settingId, status) {
   })
 }
 
+export function updateGroupDescription(groupId, description) {
+  return request({
+    url: '/im-web/group/updateGroupDescription',
+    method: 'post',
+    data: {
+      groupId: groupId,
+      description: description
+    }
+  })
+}
+
 export function updateGroupName(groupId, name) {
   return request({
     url: '/im-web/group/updateGroupName',

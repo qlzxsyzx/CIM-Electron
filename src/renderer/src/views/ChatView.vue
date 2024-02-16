@@ -20,11 +20,13 @@
                 <component :is="Component" />
             </router-view>
         </div>
+
+        <el-image-viewer v-if="imageViewerVisible" :url-list="imageUrl" @close="imageViewerVisible = false" />
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, onBeforeMount, onBeforeUnmount } from "vue"
 import ChatItem from '../components/ChatItem.vue'
 import { useChatStore } from '../store/chatStore'
 import SideTopToolBar from '../components/SideTopToolBar.vue'
@@ -33,6 +35,25 @@ import { useReconnect } from '../assets/js/reconnectMixin'
 
 const chatStore = useChatStore()
 const router = useRouter()
+
+const dbclickImage = (e) => {
+    const target = e.target;
+    if (target.tagName === 'IMG' && !target.classList.contains('cim-emoji')) {
+        // 阻止事件冒泡
+        e.stopPropagation();
+        // 调用预览方法
+        openImageViewer(e.target.src)
+    }
+}
+
+onBeforeMount(() => {
+    // 对img元素进行点击事件监听，实现图片预览功能
+    document.addEventListener('dblclick', dbclickImage)
+})
+
+onBeforeUnmount(() => {
+    document.removeEventListener('dblclick', dbclickImage)
+})
 
 useReconnect(() => {
     chatStore.getRecentChatList().then((res) => {
@@ -52,10 +73,10 @@ useReconnect(() => {
 
 const recentChatList = computed(() => {
     return chatStore.recentChatList.sort((a, b) => {
-        if (a.recentChat.top > b.recentChat.top){
+        if (a.recentChat.top > b.recentChat.top) {
             return -1
         }
-        if (a.recentChat.top < b.recentChat.top){
+        if (a.recentChat.top < b.recentChat.top) {
             return 1
         }
         let atime = a.recentChat.createTime
@@ -81,6 +102,14 @@ const openChat = (item) => {
     } else {
         router.push({ path: '/chat/group/' + item.recentChat.groupId })
     }
+}
+
+const imageViewerVisible = ref(false)
+const imageUrl = ref([])
+
+const openImageViewer = (url) => {
+    imageViewerVisible.value = true
+    imageUrl.value = [url]
 }
 </script>
 
