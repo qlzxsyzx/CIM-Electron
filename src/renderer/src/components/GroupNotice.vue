@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount, onBeforeUnmount } from 'vue';
+import { ref, computed, onBeforeMount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useGroupStore } from '../store/groupStore'
 import { ElMessage } from 'element-plus';
@@ -206,14 +206,6 @@ const handleRemoveNotice = (noticeId) => {
     }).catch((err) => {
         ElMessage.error('删除失败！')
     })
-}
-
-const imageViewerVisible = ref(false)
-const imageUrl = ref([])
-
-const openImageViewer = (url) => {
-    imageViewerVisible.value = true
-    imageUrl.value = [url]
 }
 </script>
 

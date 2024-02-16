@@ -9,7 +9,6 @@ const emojiRegex = /\[(.*?)\]/g
 // 输入框复制文本事件回调
 export const handlePaste = (e,fileUploadCallback) => {
   let clp = (e.originalEvent || e).clipboardData
-  console.log(clp.items[0])
   // 处理items的文件类型资源
   const isImage = handleFileItems(clp.items,fileUploadCallback)
   if(isImage){
@@ -46,7 +45,7 @@ const handleFileItems = (items,fileUploadCallback) => {
       reader.readAsDataURL(items[i].getAsFile())
       reader.onload = function (e) {
         const base64 = e.target.result
-        const img = `<img src="${base64}" style="width: auto; height: 200px;" />`
+        const img = `<img src="${base64}" style="max-width: 300px; max-height: 300px;" />`
         document.execCommand('insertHtml', false, img)
       }
     }
@@ -56,7 +55,7 @@ const handleFileItems = (items,fileUploadCallback) => {
 
 export const decodeMessageToHtml = (message) => {
   // 解码消息格式 text[图片 src='']text[表情]
-  const decodedMessage1 = message.replace(/\[图片 src="(.*?)"]/g, `<img src="$1" class="cim-image" style="width: auto; height: 200px;" />`)
+  const decodedMessage1 = message.replace(/\[图片 src="(.*?)"]/g, `<img src="$1" class="cim-image" style="max-width: 300px; max-height: 300px;" />`)
   // 将消息中的[笑]等格式的字符替换为emoji image
   const decodedMessage2 = decodedMessage1.replace(emojiRegex, (match, name) => {
     const emojiUrl = emojiMap.get(name)

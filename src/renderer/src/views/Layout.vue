@@ -9,11 +9,12 @@
             </Transition>
         </router-view>
     </div>
+    <el-image-viewer v-if="imageViewerVisible" :url-list="imageUrl" @close="imageViewerVisible = false" />
 </template>
 
 <script setup>
 import MenuBar from '../components/MenuBar.vue';
-import { ref, onBeforeMount, computed } from 'vue';
+import { ref, onBeforeMount, onBeforeUnmount, computed } from 'vue';
 import { useUserStore } from '../store/userStore';
 import { useChatStore } from '../store/chatStore';
 import { useFriendStore } from '../store/friendStore';
@@ -32,6 +33,33 @@ const groupStore = useGroupStore()
 const route = useRoute();
 
 const recentChatList = computed(() => chatStore.recentChatList);
+
+const dbclickImage = (e) => {
+    const target = e.target;
+    if (target.tagName === 'IMG' && !target.classList.contains('cim-emoji')) {
+        // 阻止事件冒泡
+        e.stopPropagation();
+        // 调用预览方法
+        openImageViewer(e.target.src)
+    }
+}
+
+onBeforeMount(() => {
+    // 对img元素进行点击事件监听，实现图片预览功能
+    document.addEventListener('dblclick', dbclickImage)
+})
+
+onBeforeUnmount(() => {
+    document.removeEventListener('dblclick', dbclickImage)
+})
+
+const imageViewerVisible = ref(false)
+const imageUrl = ref([])
+
+const openImageViewer = (url) => {
+    imageViewerVisible.value = true
+    imageUrl.value = [url]
+}
 
 useReconnect(() => {
     userStore.getUserInfo()

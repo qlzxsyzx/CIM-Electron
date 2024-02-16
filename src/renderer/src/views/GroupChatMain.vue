@@ -16,9 +16,11 @@
                 </el-drawer>
                 <div class="main-chat-container">
                     <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
-                        <template v-for="item in chatMessageList" :key="item.messageId">
-                            <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
-                        </template>
+                        <div style="display: flex;flex-direction: column-reverse;">
+                            <template v-for="item in chatMessageList" :key="item.messageId">
+                                <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
+                            </template>
+                        </div>
                     </div>
                     <div class="main-footer-container">
                         <div class="tool-area">
@@ -32,12 +34,16 @@
                                     <Emoji @selectEmoji="selectEmoji" />
                                 </el-popover>
                                 <!-- 文件上传 -->
-                                <FileUpload accept-file-type="file">
+                                <FileUpload accept-file-type="file" @upload="fileUpload">
                                     <template #trigger>
                                         <SvgIcon iconName="file" iconClass="tool"></SvgIcon>
                                     </template>
                                 </FileUpload>
-                                <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
+                                <FileUpload accept-file-type="image" @upload="fileUpload">
+                                    <template #trigger>
+                                        <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
+                                    </template>
+                                </FileUpload>
                                 <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
                                 <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
                             </div>
@@ -92,7 +98,7 @@
     </div>
     <div class="el-overlay" v-show="moreOptionsVisible" style="opacity: 0;" @click="moreOptionsVisible = false"></div>
     <el-dialog v-model="noticeDialogVisible" title="群公告" width="400">
-        <GroupNotice v-if="noticeDialogVisible"/>
+        <GroupNotice v-if="noticeDialogVisible" />
     </el-dialog>
 </template>
 
@@ -140,7 +146,6 @@ onBeforeMount(() => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
-                    isLoading.value = false
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -164,7 +169,6 @@ onBeforeRouteUpdate((to, from, next) => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
-                    isLoading.value = false
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -187,7 +191,6 @@ useReconnect(() => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId).then(res => {
                 if (res.code === 200) {
-                    isLoading.value = false
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -352,7 +355,10 @@ const firstOpenScroll = () => {
     nextTick(() => {
         const el = document.getElementById('main-view-container')
         if (!el) return
-        el.scrollTop = el.scrollHeight
+        setTimeout(() => {
+            el.scrollTop = el.scrollHeight
+            isLoading.value = false
+        }, 100)
     })
 }
 
@@ -371,7 +377,6 @@ const handleScroll = () => {
     }
     // 判断是否滚动到顶部-50,滚到就获取更多消息
     if (scrollTop <= 50 && chatMessageList.value.length >= 10) {
-        console.log('滚动到顶部', scrollTop)
         isTop.value = true
     } else {
         isTop.value = false
@@ -380,7 +385,7 @@ const handleScroll = () => {
 
 const scrollToBottom = async () => {
     await nextTick()
-    const index = chatMessageList.value[chatMessageList.value.length - 1].messageId
+    const index = chatMessageList.value[0].messageId
     // 点击后scroll到index id位置
     const el = document.getElementById(`message-${index}`)
     if (!el) return
@@ -392,6 +397,25 @@ const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
 const isEmpty = ref(true)
+
+// fileUpload组件上传图片
+const fileUpload = (file) => {
+    messageInput.value.focus()
+    if (!file) return
+    if (file.type.indexOf('image') === -1) {
+        // 是文件
+        fileUploadCallback(file)
+    } else {
+        // 是图片
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = function (e) {
+            const base64 = e.target.result
+            const img = `<img src="${base64}" style="max-width: 300px; max-height: 300px;" />`
+            document.execCommand('insertHtml', false, img)
+        }
+    }
+}
 
 const fileUploadCallback = (file) => {
     // 粘贴的是文件，创建文件发送消息

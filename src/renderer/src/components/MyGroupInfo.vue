@@ -175,6 +175,11 @@
     <el-dialog v-model="noticeDialogVisible" title="群公告" width="400" destroy-on-close>
         <GroupNotice />
     </el-dialog>
+
+    <!-- 转让群聊dialog -->
+    <el-dialog v-model="transferDialogVisible" title="转让群聊" width="30%" append-to-body>
+        <TransferGroup v-if="transferDialogVisible" :groupId="currentGroupInfo.id" />
+    </el-dialog>
 </template>
 
 <script setup>
@@ -189,6 +194,7 @@ import { validRemark, validGroupName } from '../assets/js/regex-validate'
 import { updateGroupRemark, updateUserNickName, updateGroupPromptStatus, updateGroupDescription } from '../api/group'
 import GroupNotice from '../components/GroupNotice.vue';
 import CropperAvatar from './CropperAvatar.vue';
+import TransferGroup from '../components/TransferGroup.vue';
 
 const props = defineProps(['groupInfo'])
 
@@ -355,19 +361,19 @@ const handleCommand = (command) => {
     switch (command) {
         case '1':
             // 转让群聊
-            if (groupSetting.role === 3) {
+            if (groupSetting.value.role === 3) {
                 transferGroup()
             }
             break;
         case '2':
             // 解散群聊
-            if (groupSetting.role === 3) {
+            if (groupSetting.value.role === 3) {
                 dismissGroup()
             }
             break;
         case '3':
             // 退出群聊
-            if (groupSetting.role === 3) {
+            if (groupSetting.value.role === 3) {
                 ElMessage.error('请先转让群聊')
             } else {
                 exitGroup()
@@ -378,34 +384,15 @@ const handleCommand = (command) => {
     }
 }
 
+const transferDialogVisible = ref(false)
+
 const transferGroup = () => {
-    // messagebox 提示
-    ElMessageBox.confirm(
-        '确定要拉黑该好友吗？',
-        '警告',
-        {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    ).then(() => {
-        // 请求屏蔽
-        friendStore.blockUser(currentFriendInfo.value.friendId).then(res => {
-            if (res.code === 200) {
-                ElMessage.success('拉黑成功');
-            }
-        }).catch(err => {
-            ElMessage.error('拉黑失败');
-        })
-    }).catch((err) => {
-        console.log(err);
-    })
+    transferDialogVisible.value = true
 }
 
 const dismissGroup = () => {
-    // messagebox 提示
     ElMessageBox.confirm(
-        '确定要拉黑该好友吗？',
+        '确定要解散该群聊吗？',
         '警告',
         {
             confirmButtonText: '确定',
@@ -413,13 +400,14 @@ const dismissGroup = () => {
             type: 'warning',
         }
     ).then(() => {
-        // 请求屏蔽
-        friendStore.blockUser(currentFriendInfo.value.friendId).then(res => {
+        groupStore.dismissGroup(currentGroupInfo.value.id).then(res => {
             if (res.code === 200) {
-                ElMessage.success('拉黑成功');
+                ElMessage.success('解散成功');
+                router.push('/chat/home');
             }
         }).catch(err => {
-            ElMessage.error('拉黑失败');
+            console.log(err);
+            ElMessage.error('解散失败');
         })
     }).catch((err) => {
         console.log(err);
@@ -427,9 +415,8 @@ const dismissGroup = () => {
 }
 
 const exitGroup = () => {
-    // messagebox 提示
     ElMessageBox.confirm(
-        '确定要拉黑该好友吗？',
+        '确定要退出该群聊吗？',
         '警告',
         {
             confirmButtonText: '确定',
@@ -437,13 +424,14 @@ const exitGroup = () => {
             type: 'warning',
         }
     ).then(() => {
-        // 请求屏蔽
-        friendStore.blockUser(currentFriendInfo.value.friendId).then(res => {
+        groupStore.exitGroup(currentGroupInfo.value.id).then(res => {
             if (res.code === 200) {
-                ElMessage.success('拉黑成功');
+                ElMessage.success('退出成功');
+                router.push('/chat/home');
             }
         }).catch(err => {
-            ElMessage.error('拉黑失败');
+            console.log(err);
+            ElMessage.error('退出失败');
         })
     }).catch((err) => {
         console.log(err);

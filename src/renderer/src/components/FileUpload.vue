@@ -9,12 +9,12 @@
 
 <script setup>
 import { ref,computed } from 'vue'
-import { fileUpload } from '../assets/js/file-upload'
 
 const props = defineProps(['acceptFileType'])
+const emits = defineEmits(['upload'])
 const LimitFileType = computed(() => {
     if(props.acceptFileType === 'image'){
-        return '.jpeg, .png, .gif, .jpg, .webp'
+        return 'image/*'
     }else {
         return 'all'
     }
@@ -28,8 +28,7 @@ const handleClick = () => {
 
 const handleFileChange = (e) => {
     const file = e.target.files[0]
-    console.log('file', file)
-    fileUpload(file,1060102572343296)
+    emits('upload', file)
 }
 </script>
 

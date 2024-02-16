@@ -60,10 +60,10 @@ export const useChatStore = defineStore('chatStore', {
     async getChatMessageList(roomId) {
       const res = await getChatMessageList(roomId, 1, 10)
       if (res.code === 200) {
-        this.currentChatHistory = res.data.reverse()
+        this.currentChatHistory = res.data
         if (res.data.length > 0) {
           this.recentChatList.find((item) => item.recentChat.roomId === roomId).lastMessage =
-            res.data[res.data.length - 1]
+            res.data[0]
         }
       }
       return res
@@ -71,7 +71,7 @@ export const useChatStore = defineStore('chatStore', {
     async getMoreChatMessages(roomId, pageNum, pageSize) {
       const res = await getChatMessageList(roomId, pageNum, pageSize)
       if (res.code === 200) {
-        Array.prototype.unshift.apply(this.currentChatHistory, res.data.reverse())
+        this.currentChatHistory = Array.prototype.concat.apply(this.currentChatHistory, res.data)
       }
       return res
     },
@@ -92,7 +92,7 @@ export const useChatStore = defineStore('chatStore', {
     },
     // 向当前会话聊天记录添加消息
     addCurrentChatHistory(msg) {
-      this.currentChatHistory.push(msg)
+      this.currentChatHistory.unshift(msg)
     },
     async createSingleChat(friendId) {
       const res = await createSingleChat(friendId)

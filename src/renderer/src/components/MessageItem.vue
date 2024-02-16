@@ -160,10 +160,10 @@ const type = computed(() => {
             }
 
             .chat-msg-bottom {
-                display: inline-block;
-                padding-right: 300px;
+                display: flex;
 
                 .msg-container {
+                    max-width: 50%;
                     display: block;
                     position: relative;
                     min-height: 30px;
@@ -218,8 +218,8 @@ const type = computed(() => {
                 }
 
                 .chat-msg-bottom {
-                    padding-left: 300px;
-                    padding-right: 0;
+                    display: flex;
+                    flex-direction: row-reverse;
 
                     .msg-container {
                         margin-left: 10px;

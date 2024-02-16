@@ -1,59 +1,66 @@
 <template>
-    <div class="item-container" @mouseenter="isHover = true" @mouseleave="isHover = false">
-        <div class="notice-title">
-            <span class="name">{{ getMemberName(props.notice) }}</span>
-            <span class="time">{{ formatLocalDateTimeToText(props.notice.updateTime) }}</span>
-            <template v-if="props.groupSetting.role !== 1 && isHover">
-                <el-icon class="icon" @click="handleEditNotice">
-                    <EditPen />
-                </el-icon>
-                <el-icon class="icon" @click="handleRemoveNotice">
-                    <Delete />
-                </el-icon>
-            </template>
-        </div>
-        <div class="notice-content">
-            <div class="text" ref="text">
-                <span ref="contentSpan">{{ props.notice.content }}</span>
+    <el-skeleton :rows="4" :loading="loading" animated>
+        <template #template>
+            <div class="item-container">
+                <el-skeleton-item variant="text" style="width: 40%;margin-bottom: 10px;" />
+                <el-skeleton-item variant="text" style="width: 60%;margin-bottom: 10px;" />
+                <el-skeleton-item variant="text" style="width: 60%;margin-bottom: 10px;" />
+                <el-skeleton-item variant="text" style="width: 80%" />
             </div>
-            <div class="image-container" v-if="props.notice.image">
-                <img :src="props.notice.image" class="image">
-            </div>
-        </div>
-        <template v-if="isNeedExpand">
-            <div class="operation">
-                <template v-if="!isExpand">
-                    <div class="expand" @click="handleExpand">
-                        展开
-                        <el-icon>
-                            <ArrowDown />
+        </template>
+        <template #default>
+            <div class="item-container" @mouseenter="isHover = true" @mouseleave="isHover = false">
+                <div class="notice-title">
+                    <span class="name">{{ name }}</span>
+                    <span class="time">{{ formatLocalDateTimeToText(props.notice.updateTime) }}</span>
+                    <template v-if="props.groupSetting.role !== 1 && isHover">
+                        <el-icon class="icon" @click="handleEditNotice">
+                            <EditPen />
                         </el-icon>
+                        <el-icon class="icon" @click="handleRemoveNotice">
+                            <Delete />
+                        </el-icon>
+                    </template>
+                </div>
+                <div class="notice-content">
+                    <div class="text" ref="text">
+                        <span ref="contentSpan">{{ props.notice.content }}</span>
                     </div>
-                </template>
-                <template v-else>
-                    <div class="expand" @click="handleUpClose">
-                        收起
-                        <el-icon>
-                            <ArrowUp />
-                        </el-icon>
+                    <div class="image-container" v-if="props.notice.image">
+                        <img :src="props.notice.image" class="image">
+                    </div>
+                </div>
+                <template v-if="isNeedExpand">
+                    <div class="operation">
+                        <template v-if="!isExpand">
+                            <div class="expand" @click="handleExpand">
+                                展开
+                                <el-icon>
+                                    <ArrowDown />
+                                </el-icon>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="expand" @click="handleUpClose">
+                                收起
+                                <el-icon>
+                                    <ArrowUp />
+                                </el-icon>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
         </template>
-    </div>
+    </el-skeleton>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useGroupStore } from '../store/groupStore'
-import { useFriendStore } from '../store/friendStore';
+import { ref, watch, onBeforeMount, nextTick } from 'vue';
 import { formatLocalDateTimeToText } from '../assets/js/format';
 import { getMemberInfo } from '../api/group';
 
 
-const groupStore = useGroupStore()
-const friendStore = useFriendStore();
 const props = defineProps(['notice', 'groupSetting'])
 const emits = defineEmits(['edit', 'remove'])
 
@@ -62,14 +69,28 @@ const contentSpan = ref(null)
 const isHover = ref(false)
 const isNeedExpand = ref(false)
 const isExpand = ref(false)
+const name = ref('')
+const loading = ref(true)
 
-onMounted(() => {
-    // 检查contentSpan高度
-    const height = contentSpan.value.offsetHeight
-    if (height > 100) {
-        isNeedExpand.value = true
-    } else {
-        isNeedExpand.value = false
+onBeforeMount(() => {
+    getMemberInfo(props.notice.groupId, props.notice.userId).then(res => {
+        if (res.code === 200) {
+            name.value = res.data.userNickName || res.data.remark || res.data.name
+            loading.value = false
+        }
+    })
+})
+
+watch(() => loading.value, (newValue) => {
+    if (!newValue) {
+        nextTick(() => {
+            const height = contentSpan.value.offsetHeight
+            if (height > 100) {
+                isNeedExpand.value = true
+            } else {
+                isNeedExpand.value = false
+            }
+        })
     }
 })
 
@@ -91,25 +112,6 @@ const handleEditNotice = () => {
 
 const handleRemoveNotice = () => {
     emits('remove', props.notice.id)
-}
-
-const getMemberName = (item) => {
-    const friend = friendStore.findFriendByUserId(item.userId)
-    const member = groupStore.getMemberByGroupIdAndUserId(item.groupId, item.userId)
-    if (friend) {
-        return friend.remark || member.userNickName || member.userInfo.name;
-    } else {
-        if (member) {
-            return member.userNickName || member.userInfo.name;
-        } else {
-            getMemberInfo(item.groupId, item.userId).then(res => {
-                if (res.code === 200) {
-                    return res.data.userNickName || res.data.remark || res.data.name
-                }
-            })
-            return ''
-        }
-    }
 }
 </script>
 

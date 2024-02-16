@@ -15,9 +15,11 @@
                     <SingleChatMoreOptions v-if="moreOptionsVisible" />
                 </el-drawer>
                 <div class="main-view-container" id="main-view-container" @scroll="handleScroll">
-                    <template v-for="item in chatMessageList" :key="item.messageId">
-                        <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
-                    </template>
+                    <div style="display: flex;flex-direction: column-reverse;">
+                        <template v-for="item in chatMessageList" :key="item.messageId">
+                            <MessageItem :id="'message-' + item.messageId" :messageInfo="item" />
+                        </template>
+                    </div>
                 </div>
                 <div class="main-footer-container">
                     <div class="tool-area">
@@ -31,12 +33,16 @@
                                 <Emoji @selectEmoji="selectEmoji" />
                             </el-popover>
                             <!-- 文件上传 -->
-                            <FileUpload accept-file-type="file">
+                            <FileUpload accept-file-type="file" @upload="fileUpload">
                                 <template #trigger>
                                     <SvgIcon iconName="file" iconClass="tool"></SvgIcon>
                                 </template>
                             </FileUpload>
-                            <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
+                            <FileUpload accept-file-type="image" @upload="fileUpload">
+                                <template #trigger>
+                                    <SvgIcon iconName="picture" iconClass="tool"></SvgIcon>
+                                </template>
+                            </FileUpload>
                             <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
                             <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
                         </div>
@@ -64,7 +70,7 @@
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
 import { handlePaste, encodeHtmlToMessage } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect, watch } from 'vue'
+import { ref, computed, nextTick, watchPostEffect } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
@@ -136,7 +142,6 @@ watchPostEffect(() => {
         // 获取聊天记录
         chatStore.getChatMessageList(currentChatInfo.value.roomId).then(res => {
             if (res.code === 200) {
-                isLoading.value = false
                 if (isNeedScrollToBottom.value) {
                     firstOpenScroll()
                 }
@@ -163,7 +168,10 @@ const firstOpenScroll = () => {
     nextTick(() => {
         const el = document.getElementById('main-view-container')
         if (!el) return
-        el.scrollTop = el.scrollHeight
+        setTimeout(() => {
+            el.scrollTop = el.scrollHeight
+            isLoading.value = false
+        },100)
     })
 }
 
@@ -182,7 +190,6 @@ const handleScroll = () => {
     }
     // 判断是否滚动到顶部-50,滚到就获取更多消息
     if (scrollTop <= 50 && chatMessageList.value.length >= 10) {
-        console.log('滚动到顶部', scrollTop)
         isTop.value = true
     } else {
         isTop.value = false
@@ -191,7 +198,7 @@ const handleScroll = () => {
 
 const scrollToBottom = async () => {
     await nextTick()
-    const index = chatMessageList.value[chatMessageList.value.length - 1].messageId
+    const index = chatMessageList.value[0].messageId
     // 点击后scroll到index id位置
     const el = document.getElementById(`message-${index}`)
     if (!el) return
@@ -202,6 +209,25 @@ const scrollToBottom = async () => {
 const inputArea = ref()
 const messageInput = ref()
 const emojiVisible = ref(false)
+
+// fileUpload组件上传图片
+const fileUpload = (file) => {
+    messageInput.value.focus()
+    if (!file) return
+    if (file.type.indexOf('image') === -1) {
+        // 是文件
+        fileUploadCallback(file)
+    } else {
+        // 是图片
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = function (e) {
+            const base64 = e.target.result
+            const img = `<img src="${base64}" style="max-width: 300px; max-height: 300px;" />`
+            document.execCommand('insertHtml', false, img)
+        }
+    }
+}
 
 const fileUploadCallback = (file) => {
     // 粘贴的是文件，创建文件发送消息

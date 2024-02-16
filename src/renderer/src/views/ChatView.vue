@@ -20,8 +20,6 @@
                 <component :is="Component" />
             </router-view>
         </div>
-
-        <el-image-viewer v-if="imageViewerVisible" :url-list="imageUrl" @close="imageViewerVisible = false" />
     </div>
 </template>
 
@@ -35,25 +33,6 @@ import { useReconnect } from '../assets/js/reconnectMixin'
 
 const chatStore = useChatStore()
 const router = useRouter()
-
-const dbclickImage = (e) => {
-    const target = e.target;
-    if (target.tagName === 'IMG' && !target.classList.contains('cim-emoji')) {
-        // 阻止事件冒泡
-        e.stopPropagation();
-        // 调用预览方法
-        openImageViewer(e.target.src)
-    }
-}
-
-onBeforeMount(() => {
-    // 对img元素进行点击事件监听，实现图片预览功能
-    document.addEventListener('dblclick', dbclickImage)
-})
-
-onBeforeUnmount(() => {
-    document.removeEventListener('dblclick', dbclickImage)
-})
 
 useReconnect(() => {
     chatStore.getRecentChatList().then((res) => {
@@ -103,14 +82,6 @@ const openChat = (item) => {
         router.push({ path: '/chat/group/' + item.recentChat.groupId })
     }
 }
-
-const imageViewerVisible = ref(false)
-const imageUrl = ref([])
-
-const openImageViewer = (url) => {
-    imageViewerVisible.value = true
-    imageUrl.value = [url]
-}
 </script>
 
 <style lang="scss" scoped>
@@ -156,7 +127,7 @@ const openImageViewer = (url) => {
     }
 
     .chat-main-container {
-        width: 100%;
+        width: calc(100% - 350px);
         height: 100%;
         background-color: #f0f2f5;
         display: flex;
