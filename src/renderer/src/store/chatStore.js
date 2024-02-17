@@ -24,7 +24,7 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
-    findRecentChatByToUserId(toUserId){
+    findRecentChatByToUserId(toUserId) {
       return this.recentChatList.find((item) => item.recentChat.toUserId === toUserId)
     },
     findRecentChatByGroupId(groupId) {
@@ -57,8 +57,18 @@ export const useChatStore = defineStore('chatStore', {
       this.currentChatInfo = recentChat
     },
     // 获取分页聊天记录
-    async getChatMessageList(roomId) {
-      const res = await getChatMessageList(roomId, 1, 10)
+    async getChatMessageList(roomId, pageSize) {
+      const lastMessage = this.currentChatHistory[this.currentChatHistory.length - 1]
+      const params = {
+        roomId,
+        lastMessageId: lastMessage
+          ? lastMessage.roomId === roomId
+            ? lastMessage.messageId
+            : ''
+          : '',
+        pageSize: pageSize
+      }
+      const res = await getChatMessageList(params)
       if (res.code === 200) {
         this.currentChatHistory = res.data
         if (res.data.length > 0) {
@@ -68,8 +78,13 @@ export const useChatStore = defineStore('chatStore', {
       }
       return res
     },
-    async getMoreChatMessages(roomId, pageNum, pageSize) {
-      const res = await getChatMessageList(roomId, pageNum, pageSize)
+    async getMoreChatMessages(roomId, pageSize) {
+      const params = {
+        roomId,
+        lastMessageId: this.currentChatHistory[this.currentChatHistory.length - 1]?.messageId,
+        pageSize: pageSize
+      }
+      const res = await getChatMessageList(params)
       if (res.code === 200) {
         this.currentChatHistory = Array.prototype.concat.apply(this.currentChatHistory, res.data)
       }

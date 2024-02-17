@@ -45,6 +45,11 @@ export const formatDate = (localDateTime) => {
   })
 }
 
+export const formatTime = (localDateTime) => {
+  const date = new Date(localDateTime)
+  return date.toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+}
+
 // format 文件大小
 export const formatFileSize = (size) => {
   if (size < 1024) {

@@ -45,18 +45,17 @@
                                     </template>
                                 </FileUpload>
                                 <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
-                                <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
+                                <SvgIcon iconName="history" iconClass="tool" @click="openChatHistoryDialog"></SvgIcon>
                             </div>
                         </div>
                         <div class="input-area" id="input-area" ref="inputArea">
-                            <div class="message-input" :class="{ 'disabled': group.noSpeak === 1 && isEmpty }"
-                                id="message-input" ref="messageInput" @input="handleInput" @paste="handleInputPaste"
-                                contenteditable="true" spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
+                            <div class="message-input" :class="{ 'disabled': noSpeak && isEmpty }" id="message-input"
+                                ref="messageInput" @input="handleInput" @paste="handleInputPaste" contenteditable="true"
+                                spellcheck="false" @keyup="saveSelection" @mouseup="saveSelection"
                                 @keydown.enter.exact="handleEnter" @keyup.ctrl.enter="handleCtrlEnter" autofocus></div>
                         </div>
                         <div class="control-area">
-                            <el-button type="primary" @click="handleSendMesage"
-                                :disabled="group.noSpeak === 1">发送</el-button>
+                            <el-button type="primary" @click="handleSendMesage" :disabled="noSpeak">发送</el-button>
                         </div>
                     </div>
                 </div>
@@ -100,6 +99,9 @@
     <el-dialog v-model="noticeDialogVisible" title="群公告" width="400">
         <GroupNotice v-if="noticeDialogVisible" />
     </el-dialog>
+    <el-dialog title="聊天记录" v-model="chatHistoryDialogVisible" width="40%">
+        <ChatHistory v-if="chatHistoryDialogVisible" :lastMessageId="lastMessageId" />
+    </el-dialog>
 </template>
 
 <script setup>
@@ -121,6 +123,7 @@ import GroupChatMoreOptions from '../components/GroupChatMoreOptions.vue';
 import GroupMemberItem from '../components/GroupMemberItem.vue';
 import { pinyin } from 'pinyin-pro'
 import GroupNotice from '../components/GroupNotice.vue';
+import ChatHistory from '../components/ChatHistory.vue';
 
 const route = useRoute()
 const chatStore = useChatStore()
@@ -132,10 +135,10 @@ const isLoading = ref(true)
 const isTop = ref(false)
 const isBottom = ref(false)
 const isNeedScrollToBottom = ref(true)
-const pageNum = ref(2)
 const pageSize = ref(10)
 const isHasMore = ref(true)
 const moreOptionsVisible = ref(false)
+const lastMessageId = ref('')
 
 onBeforeMount(() => {
     // 获取群组信息
@@ -144,8 +147,11 @@ onBeforeMount(() => {
             // 获取群组成员
             groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
-            chatStore.getChatMessageList(res.data.roomId).then(res => {
+            chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
+                    if (res.data.length < 10) {
+                        isHasMore.value = false
+                    }
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -161,14 +167,20 @@ onBeforeRouteUpdate((to, from, next) => {
     console.log('onBeforeRouteUpdate')
     isLoading.value = true
     isNeedScrollToBottom.value = true
+    isTop.value = false
+    isBottom.value = false
+    isHasMore.value = true
     // 获取群组信息
     groupStore.getGroupInfo(to.params.groupId).then(res => {
         if (res.code === 200 || res.data.roomId) {
             // 获取群组成员
             groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
-            chatStore.getChatMessageList(res.data.roomId).then(res => {
+            chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
+                    if (res.data.length < 10) {
+                        isHasMore.value = false
+                    }
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -189,8 +201,11 @@ useReconnect(() => {
             // 获取群组成员
             groupStore.getGroupMemberList(res.data.id, 1, 200)
             // 获取聊天记录
-            chatStore.getChatMessageList(res.data.roomId).then(res => {
+            chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
+                    if (res.data.length < 10) {
+                        isHasMore.value = false
+                    }
                     if (isNeedScrollToBottom.value) {
                         firstOpenScroll()
                     }
@@ -241,6 +256,15 @@ const noticeContent = computed(() => {
         }
     } else {
         return '暂无群公告'
+    }
+})
+
+const noSpeak = computed(() => {
+    if (!groupSetting.value) return false
+    if (groupSetting.value.role === 1) {
+        return group.value.noSpeak
+    } else {
+        return false
     }
 })
 
@@ -339,12 +363,11 @@ const chatMessageList = computed(() => {
 
 watchPostEffect(() => {
     if (isTop.value && isHasMore.value) {
-        chatStore.getMoreChatMessages(route.params.roomId, pageNum.value, pageSize.value).then(res => {
+        chatStore.getMoreChatMessages(route.params.roomId, pageSize.value).then(res => {
             if (res.code === 200) {
                 if (res.data.length < 10) {
                     isHasMore.value = false
                 }
-                pageNum.value++
                 isTop.value = false
             }
         })
@@ -415,6 +438,15 @@ const fileUpload = (file) => {
             document.execCommand('insertHtml', false, img)
         }
     }
+}
+
+const chatHistoryDialogVisible = ref(false)
+
+const openChatHistoryDialog = () => {
+    const lastMessage = chatMessageList.value.find(item => !item.sendStatus)
+    const id = lastMessage?.messageId || ''
+    lastMessageId.value = id
+    chatHistoryDialogVisible.value = true
 }
 
 const fileUploadCallback = (file) => {
@@ -738,6 +770,12 @@ function restoreSelection() {
                         word-break: break-all;
                         line-height: 25px;
                         height: 100%;
+
+                        &.disabled::before {
+                            // placeholder样式
+                            color: var(--el-text-color-placeholder);
+                            content: '全员禁言中';
+                        }
                     }
                 }
 

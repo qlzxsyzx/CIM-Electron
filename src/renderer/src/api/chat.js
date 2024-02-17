@@ -21,10 +21,11 @@ export function createGroupChat(groupId){
     })
 }
 
-export function getChatMessageList(roomId,pageNum,pageSize){
+export function getChatMessageList(data){
     return request({
-        url:'/im-web/chat/getChatMessageList/' + roomId + '/' + pageNum + '/' + pageSize,
-        method:'get'
+        url:'/im-web/chat/getChatMessageList',
+        method:'post',
+        data
     })
 }
 
@@ -40,5 +41,22 @@ export function topChat(id,status){
     return request({
         url:'/im-web/chat/topChat/' + id + "/" + status,
         method:'post'
+    })
+}
+
+export function getSingleChatMessageHistory(data){
+    return request({
+        url:'/im-web/chat/getSingleChatMessageHistory',
+        method:'post',
+        data
+    })
+}
+
+
+export function getGroupChatMessageHistory(data){
+    return request({
+        url:'/im-web/chat/getSingleChatMessageHistory',
+        method:'post',
+        data
     })
 }

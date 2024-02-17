@@ -44,7 +44,7 @@
                                 </template>
                             </FileUpload>
                             <SvgIcon iconName="scissor" iconClass="tool"></SvgIcon>
-                            <SvgIcon iconName="history" iconClass="tool"></SvgIcon>
+                            <SvgIcon iconName="history" iconClass="tool" @click="openChatHistoryDialog"></SvgIcon>
                         </div>
                         <div class="tool-area-right">
                             <SvgIcon iconName="call" iconClass="tool"></SvgIcon>
@@ -64,15 +64,18 @@
         </template>
     </div>
     <div class="el-overlay" v-show="moreOptionsVisible" style="opacity: 0;" @click="moreOptionsVisible = false"></div>
+    <el-dialog title="聊天记录" v-model="chatHistoryDialogVisible" width="40%">
+        <ChatHistory v-if="chatHistoryDialogVisible" :lastMessageId="lastMessageId" />
+    </el-dialog>
 </template>
 
 <script setup>
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
 import { handlePaste, encodeHtmlToMessage } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect } from 'vue'
+import { ref, computed, nextTick, watchPostEffect, onBeforeMount } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
-import { onBeforeRouteUpdate } from 'vue-router';
+import { onBeforeRouteUpdate, useRoute } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
 import { useFriendStore } from '../store/friendStore';
@@ -81,7 +84,9 @@ import { ElMessage } from 'element-plus';
 import { useReconnect } from '../assets/js/reconnectMixin';
 import { uploadImage, getByName } from '../api/image';
 import SingleChatMoreOptions from '../components/SingleChatMoreOptions.vue';
+import ChatHistory from '../components/ChatHistory.vue';
 
+const route = useRoute()
 const chatStore = useChatStore()
 const userStore = useUserStore()
 const friendStore = useFriendStore()
@@ -90,23 +95,56 @@ const isLoading = ref(true)
 const isTop = ref(false)
 const isBottom = ref(false)
 const isNeedScrollToBottom = ref(true)
-const pageNum = ref(2)
 const pageSize = ref(10)
 const isHasMore = ref(true)
 const moreOptionsVisible = ref(false)
+const lastMessageId = ref('')
+
+onBeforeMount(() => {
+    setTimeout(() => {
+        // 获取聊天记录
+        chatStore.getChatMessageList(currentChatInfo.value.roomId, pageSize.value).then(res => {
+            if (res.code === 200) {
+                if (res.data.length < pageSize.value) {
+                    isHasMore.value = false
+                }
+                if (isNeedScrollToBottom.value) {
+                    firstOpenScroll()
+                }
+            }
+        })
+    }, 100)
+})
 
 onBeforeRouteUpdate((to, from, next) => {
     isLoading.value = true
     isNeedScrollToBottom.value = true
+    isTop.value = false
+    isBottom.value = false
+    isHasMore.value = true
+    // 获取聊天记录
+    chatStore.getChatMessageList(currentChatInfo.value.roomId, pageSize.value).then(res => {
+        if (res.code === 200) {
+            if (res.data.length < pageSize.value) {
+                isHasMore.value = false
+            }
+            if (isNeedScrollToBottom.value) {
+                firstOpenScroll()
+            }
+        }
+    })
     next()
 })
 
 useReconnect(() => {
     isLoading.value = true
     // 获取聊天记录
-    chatStore.getChatMessageList(currentChatInfo.value.roomId).then(res => {
+    chatStore.getChatMessageList(currentChatInfo.value.roomId, pageSize.value).then(res => {
         if (res.code === 200) {
             isLoading.value = false
+            if (res.data.length < pageSize.value) {
+                isHasMore.value = false
+            }
             if (isNeedScrollToBottom.value) {
                 firstOpenScroll()
             }
@@ -115,13 +153,12 @@ useReconnect(() => {
 })
 
 const friend = computed(() => {
-    if (!currentChatInfo.value) return null
-    return friendStore.findFriendByUserId(currentChatInfo.value.toUserId)
+    return friendStore.findFriendByUserId(route.params.userId)
 })
 
 const friendUserInfo = computed(() => {
-    if (!currentChatInfo.value) return null
-    return userInfoStore.getUserInfo(currentChatInfo.value.toUserId)
+    if (!friend.value) return null
+    return userInfoStore.getUserInfo(friend.value.friendId)
 })
 
 const currentChatInfo = computed(() => {
@@ -138,26 +175,12 @@ const chatMessageList = computed(() => {
 })
 
 watchPostEffect(() => {
-    if (currentChatInfo.value) {
-        // 获取聊天记录
-        chatStore.getChatMessageList(currentChatInfo.value.roomId).then(res => {
-            if (res.code === 200) {
-                if (isNeedScrollToBottom.value) {
-                    firstOpenScroll()
-                }
-            }
-        })
-    }
-})
-
-watchPostEffect(() => {
     if (isTop.value && isHasMore.value) {
-        chatStore.getMoreChatMessages(currentChatInfo.value.roomId, pageNum.value, pageSize.value).then(res => {
+        chatStore.getMoreChatMessages(currentChatInfo.value.roomId, pageSize.value).then(res => {
             if (res.code === 200) {
-                if (res.data.length < 10) {
+                if (res.data.length < pageSize.value) {
                     isHasMore.value = false
                 }
-                pageNum.value++
                 isTop.value = false
             }
         })
@@ -171,7 +194,7 @@ const firstOpenScroll = () => {
         setTimeout(() => {
             el.scrollTop = el.scrollHeight
             isLoading.value = false
-        },100)
+        }, 100)
     })
 }
 
@@ -227,6 +250,15 @@ const fileUpload = (file) => {
             document.execCommand('insertHtml', false, img)
         }
     }
+}
+
+const chatHistoryDialogVisible = ref(false)
+
+const openChatHistoryDialog = () => {
+    const lastMessage = chatMessageList.value.find(item => !item.sendStatus)
+    const id = lastMessage?.messageId || ''
+    lastMessageId.value = id
+    chatHistoryDialogVisible.value = true
 }
 
 const fileUploadCallback = (file) => {

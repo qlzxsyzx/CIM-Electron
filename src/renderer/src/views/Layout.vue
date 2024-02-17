@@ -2,11 +2,7 @@
     <div class="layout-container">
         <MenuBar />
         <router-view v-slot="{ Component }">
-            <Transition>
-                <KeepAlive include="ChatView">
-                    <component :is="Component"></component>
-                </KeepAlive>
-            </Transition>
+            <component :is="Component"></component>
         </router-view>
     </div>
     <el-image-viewer v-if="imageViewerVisible" :url-list="imageUrl" @close="imageViewerVisible = false" />

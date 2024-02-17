@@ -69,9 +69,9 @@ export const useGroupStore = defineStore('groupStore', {
       const res = await getGroupInfo(groupId)
       if (res.code === 200) {
         // 更新group信息
-        this.groupList = this.groupList.filter((item) => item.id !== groupId)
+        const index = this.groupList.findIndex((item) => item.id === groupId)
         const group = res.data
-        this.groupList.push(group)
+        this.groupList.splice(index, 1, group)
         this.currnetGroupInfo = group
         if (res.data.groupSetting) {
           this.myGroupSettingMap.set(groupId, res.data.groupSetting)
