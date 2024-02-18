@@ -7,10 +7,10 @@ import path from 'path'
 
 function createLoginWindow() {
   const loginWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 1000,
-    minHeight: 500,
+    width: 1600,
+    height: 1000,
+    minWidth: 1600,
+    minHeight: 1000,
     // frame:false,
     show: false,
     autoHideMenuBar: true,

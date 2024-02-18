@@ -108,7 +108,7 @@
 import Emoji from '../components/Emoji.vue'
 import MessageItem from '../components/MessageItem.vue';
 import { handlePaste, encodeHtmlToMessage, decodeMessageToHtml } from '../assets/js/utils';
-import { ref, computed, nextTick, watchPostEffect, onActivated, onMounted, onBeforeMount } from 'vue'
+import { ref, computed, nextTick, watchPostEffect, onActivated, onMounted, onBeforeMount, watch } from 'vue'
 import FileUpload from '../components/FileUpload.vue';
 import { useRoute, onBeforeRouteUpdate } from 'vue-router';
 import { useChatStore } from '../store/chatStore';
@@ -152,9 +152,7 @@ onBeforeMount(() => {
                     if (res.data.length < pageSize.value) {
                         isHasMore.value = false
                     }
-                    if (isNeedScrollToBottom.value) {
-                        firstOpenScroll()
-                    }
+                    firstOpenScroll()
                 }
             })
         }
@@ -261,7 +259,7 @@ const noticeContent = computed(() => {
 const noSpeak = computed(() => {
     if (!groupSetting.value) return false
     if (groupSetting.value.role === 1) {
-        return group.value.noSpeak
+        return group.value.noSpeak === 1
     } else {
         return false
     }
@@ -384,6 +382,15 @@ const firstOpenScroll = () => {
     })
 }
 
+watchPostEffect(() => {
+    if(chatMessageList.value.length > 0){
+        const latestMessage = chatMessageList.value[0]
+        if(!latestMessage.receiverType && isNeedScrollToBottom.value){
+            scrollToBottom()
+        }
+    }
+})
+
 const handleScroll = () => {
     // 获取滚动容器的滚动高度
     const el = document.getElementById('main-view-container')
@@ -393,12 +400,17 @@ const handleScroll = () => {
     // 判断是否滚动到底部
     if (scrollTop + clientHeight >= scrollHeight - 30) {
         isBottom.value = true
+        isNeedScrollToBottom.value = true
     } else {
         isBottom.value = false
         isNeedScrollToBottom.value = false
     }
     // 判断是否滚动到顶部,滚到就获取更多消息
-    const index = chatMessageList.value[chatMessageList.value.length - 1].messageId
+    const topMessage = chatMessageList.value[chatMessageList.value.length - 1]
+    if(!topMessage){
+        return
+    }
+    const index = topMessage.messageId
     // 点击后scroll到index id位置
     const child = document.getElementById(`message-${index}`)
     const rect = child.getBoundingClientRect()
@@ -414,9 +426,7 @@ const scrollToBottom = async () => {
     const el = document.getElementById(`message-${index}`)
     if (!el) return
     // scroll 到 el的位置
-    setTimeout(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
-    })
+    el.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
 }
 
 const inputArea = ref()
@@ -456,7 +466,7 @@ const fileUploadCallback = (file) => {
     // 粘贴的是文件，创建文件发送消息
     const sendingMessage = {
         messageId: new Date().getTime(),
-        roomId: route.params.roomId,
+        roomId: group.value.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: group.value.id,
         receiverType: 1,
@@ -567,7 +577,7 @@ const handleSendMesage = async () => {
     // 发送消息，发送中
     const sendingMessage = {
         messageId: new Date().getTime(),
-        roomId: route.params.roomId,
+        roomId: group.value.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: group.value.id,
         receiverType: 1,
@@ -621,9 +631,9 @@ const handleSendMesage = async () => {
         return
     } else {
         const createMessageDto = {
-            roomId: route.params.roomId,
+            roomId: group.value.roomId,
             senderId: userStore.userInfo.userId,
-            receiverId: friendUserInfo.value.userId,
+            receiverId: group.value.id,
             receiverType: 1,
             type: 1,
             content: saveMessage,
@@ -739,6 +749,7 @@ function restoreSelection() {
                 width: 100%;
                 overflow-y: auto;
                 margin-bottom: 10px;
+                min-width: 700px;
             }
 
             .main-footer-container {

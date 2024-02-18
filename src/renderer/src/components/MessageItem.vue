@@ -135,8 +135,8 @@ const type = computed(() => {
 
 const handleErrorCommand = (command) => {
     if(command === 1){
-        const message = chatStore.currentChatHistory.find((item) => item.messageId === sendingMessage.messageId)
-        chatStore.currentChatHistory = chatStore.currentChatHistory.filter((item) => item.messageId !== sendingMessage.messageId)
+        const message = chatStore.currentChatHistory.find((item) => item.messageId === props.messageInfo.messageId)
+        chatStore.currentChatHistory = chatStore.currentChatHistory.filter((item) => item.messageId !== message.messageId)
         message.sendStatus = 0
         chatStore.currentChatHistory.unshift(message)
         const createMessageDto = {

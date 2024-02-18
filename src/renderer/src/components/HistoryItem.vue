@@ -3,13 +3,11 @@
         <el-skeleton :loading="loading" animated>
             <template #template>
                 <el-skeleton-item variant="circle" :size="50" />
-                <div class="history-item-content">
-                    <el-skeleton-item variant="text" style="width: 50%" />
-                    <el-skeleton-item variant="text" style="width: 80%" />
-                </div>
+                <el-skeleton-item variant="text" style="width: 50%" />
+                <el-skeleton-item variant="text" style="width: 80%" />
             </template>
             <template #default>
-                <el-avatar :size="50" :src="avatarUrl" style="min-width: 50px;"/>
+                <el-avatar :size="50" :src="avatarUrl" style="min-width: 50px;" />
                 <div class="history-item-content">
                     <div class="history-item-title">
                         <span class="name">{{ name }}</span>
@@ -73,7 +71,7 @@ const friendUserInfo = computed(() => {
 })
 
 const position = computed(() => {
-    return friendUserInfo.value.userId === userStore.userInfo.userId ? "right" : "left";
+    return props.message.senderId === userStore.userInfo.userId ? "right" : "left";
 })
 
 onBeforeMount(() => {
@@ -86,10 +84,16 @@ onBeforeMount(() => {
             }
         })
     } else {
-        if (friendInfo.value && friendUserInfo.value) {
-            name.value = friendInfo.value?.remark || friendUserInfo.value?.name
-            avatarUrl.value = friendUserInfo.value?.avatarUrl
+        if (position.value === 'right') {
+            name.value = userStore.userInfo.name
+            avatarUrl.value = userStore.userInfo.avatarUrl
             loading.value = false
+        } else {
+            if (friendInfo.value && friendUserInfo.value) {
+                name.value = friendInfo.value?.remark || friendUserInfo.value?.name
+                avatarUrl.value = friendUserInfo.value?.avatarUrl
+                loading.value = false
+            }
         }
     }
 })
@@ -97,7 +101,7 @@ onBeforeMount(() => {
 </script>
 
 <style lang="scss" scoped>
-.history-item-container{
+.history-item-container {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -109,6 +113,7 @@ onBeforeMount(() => {
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
+
         .history-item-title {
             .name {
                 max-width: 50%;
@@ -118,6 +123,7 @@ onBeforeMount(() => {
                 margin-right: 10px;
             }
         }
+
         .history-item-text {
             border-radius: 5px;
             word-break: break-word;

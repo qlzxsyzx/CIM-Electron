@@ -24,10 +24,13 @@ export const useFriendStore = defineStore('friendStore', {
       })
     },
     findFriendByUserId(userId) {
-      return this.friendList.find((item) => item.friendId == userId)
+      return this.friendList.find((item) => item.friendId === userId)
     },
     findFriendById(id) {
-      return this.friendList.find((item) => item.id == id)
+      return this.friendList.find((item) => item.id === id)
+    },
+    findFriendByRoomId(roomId) {
+      return this.friendList.find((item) => item.roomId === roomId)
     },
     async blockUser(friendId) {
       const res = await blockUser(friendId)

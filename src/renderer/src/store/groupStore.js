@@ -65,6 +65,9 @@ export const useGroupStore = defineStore('groupStore', {
     findMyGroupSettingByGroupId(groupId) {
       return this.myGroupSettingMap.get(groupId)
     },
+    findGroupByRoomId(roomId){
+      return this.groupList.find((item) => item.roomId === roomId)
+    },
     async getGroupInfo(groupId) {
       const res = await getGroupInfo(groupId)
       if (res.code === 200) {

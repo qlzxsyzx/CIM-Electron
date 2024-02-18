@@ -87,7 +87,6 @@ const newWs = () => {
       missNumber = 0
     } else {
       messageCallBack(message)
-      console.log('ws 收到消息:', message)
     }
   }
 

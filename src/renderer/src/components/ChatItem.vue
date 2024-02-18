@@ -26,7 +26,7 @@
     </div>
 </template>
 <script setup>
-import { computed } from 'vue'
+import { ref,computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router';
 import { formatLocalDateTimeToText } from '../assets/js/format'
 import { useChatStore } from '../store/chatStore';
@@ -34,6 +34,7 @@ import { useUserStore } from '../store/userStore';
 import { useUserInfoStore } from '../store/userInfoStore'
 import { useFriendStore } from '../store/friendStore'
 import { useGroupStore } from '../store/groupStore';
+import { getMemberInfo } from '../api/group';
 
 const route = useRoute()
 const props = defineProps(["chatItem"])
@@ -42,6 +43,17 @@ const userStore = useUserStore()
 const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
+const memberName = ref('')
+
+onMounted(() => {
+    if (props.chatItem.recentChat.type == 1 && props.chatItem.lastMessage) {
+        getMemberInfo(props.chatItem.recentChat.groupId, props.chatItem.lastMessage.senderId).then(res => {
+            if (res.code === 200) {
+                memberName.value = res.data.userNickName || res.data.remark || res.data.name
+            }
+        })
+    }
+})
 
 const currentChatInfo = computed(() => {
     if (!chatStore.currentChatInfo) return null
@@ -100,15 +112,7 @@ const lastMessageContent = computed(() => {
             if (message.senderId === userInfo.value.userId) {
                 return '我：' + message.content
             } else {
-                const sender = props.chatItem.sender
-                const friend = friendStore.findFriendByUserId(sender.userInfo.userId)
-                if (friend === null) {
-                    // 不是好友
-                    return sender.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
-                } else {
-                    // 是好友
-                    return friend.remark || sender.userNickName || sender.userInfo.name + "：" + props.chatItem.lastMessage.content
-                }
+                return memberName.value + "：" + props.chatItem.lastMessage.content
             }
         }
         return ''

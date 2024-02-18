@@ -55,6 +55,7 @@ export const useChatStore = defineStore('chatStore', {
     },
     recordCurrentChatInfo(recentChat) {
       this.currentChatInfo = recentChat
+      this.currentChatInfo.recentChat.unreadCount = 0
     },
     // 获取分页聊天记录
     async getChatMessageList(roomId, pageSize) {
@@ -118,6 +119,21 @@ export const useChatStore = defineStore('chatStore', {
     // 向当前会话聊天记录添加消息
     addCurrentChatHistory(msg) {
       this.currentChatHistory.unshift(msg)
+      this.currentChatInfo.lastMessage = msg
+    },
+    async addSingleChat(friendId){
+      const res = await createSingleChat(friendId)
+      if(res.code === 200){
+        this.recentChatList.unshift(res.data)
+      }
+      return res
+    },
+    async addGroupChat(groupId){
+      const res = await createGroupChat(groupId)
+      if(res.code === 200){
+        this.recentChatList.unshift(res.data)
+      }
+      return res
     },
     async createSingleChat(friendId) {
       const res = await createSingleChat(friendId)
@@ -136,19 +152,6 @@ export const useChatStore = defineStore('chatStore', {
         this.currentChatHistory = []
       }
       return res
-    },
-    // 更新会话最新消息和未读数
-    updateRecentChat(msg) {
-      const roomId = msg.roomId
-      // 获取这个会话记录
-      const recentChat = this.recentChatList.find((item) => item.roomId == roomId)
-      // 去掉这个会话记录
-      this.recentChatList = this.recentChatList.filter((item) => item.roomId != roomId)
-      // 更新这个会话记录
-      recentChat.lastMessage = msg
-      recentChat.unreadCount++
-      // 重新添加这个会话记录
-      this.recentChatList.unshift(recentChat)
     }
   }
 })

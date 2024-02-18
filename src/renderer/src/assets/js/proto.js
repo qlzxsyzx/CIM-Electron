@@ -96,13 +96,33 @@ const $root = ($protobuf.roots["default"] || ($protobuf.roots["default"] = new $
         type: "string",
         id: 6
       },
-      recordId: {
-        type: "int64",
+      fileInfo: {
+        type: "FileInfo",
         id: 7
       },
       createTime: {
         type: "string",
         id: 8
+      }
+    }
+  },
+  FileInfo: {
+    fields: {
+      recordId: {
+        type: "int64",
+        id: 1
+      },
+      realName: {
+        type: "string",
+        id: 2
+      },
+      ext: {
+        type: "string",
+        id: 3
+      },
+      fileSize: {
+        type: "int64",
+        id: 4
       }
     }
   },
