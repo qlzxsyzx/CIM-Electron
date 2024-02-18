@@ -33,9 +33,9 @@ function createLoginWindow() {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    loginWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + '/login')
+    loginWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    loginWindow.loadFile(join(__dirname, '../renderer/index.html/login'))
+    loginWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   // 窗口最小化
@@ -48,62 +48,6 @@ function createLoginWindow() {
     loginWindow.close()
   })
 }
-
-// function createWindow() {
-//   // Create the browser window.
-//   const mainWindow = new BrowserWindow({
-//     width: 1000,
-//     height: 500,
-//     minWidth: 1000,
-//     minHeight: 500,
-//     // frame:false, //隐藏google标题栏
-//     // titleBarStyle : 'hidden',
-//     show: false,
-//     autoHideMenuBar: true,
-//     ...(process.platform === 'linux' ? { icon } : {}),
-//     webPreferences: {
-//       preload: join(__dirname, '../preload/index.js'),
-//       sandbox: false,
-//     }
-//   })
-
-//   mainWindow.on('ready-to-show', () => {
-//     mainWindow.show()
-//     mainWindow.webContents.openDevTools ()
-//   })
-
-//   mainWindow.webContents.setWindowOpenHandler((details) => {
-//     shell.openExternal(details.url)
-//     return { action: 'deny' }
-//   })
-
-//   // HMR for renderer base on electron-vite cli.
-//   // Load the remote URL for development or the local html file for production.
-//   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-//     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
-//   } else {
-//     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-//   }
-
-//   // 窗口最小化
-//   ipcMain.on('main-min',() => {
-//     mainWindow.minimize()
-//   })
-
-//   // 窗口关闭
-//   ipcMain.on('main-close',() => {
-//     mainWindow.close()
-//   })
-
-//   // 全屏
-//   ipcMain.on('window-max',() => {
-//     if(mainWindow.isMaximized()){ // 为true表示窗口已最大化
-//       mainWindow.restore();// 将窗口恢复为之前的状态.
-//     }else{
-//       mainWindow.maximize();
-//     }
-//   })
-// }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
