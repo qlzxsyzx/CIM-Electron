@@ -91,19 +91,29 @@ export const useChatStore = defineStore('chatStore', {
       return res
     },
     async sendMessage(sendingMessage, data) {
-      const res = await sendMessage(data)
-      if (res.code === 200) {
-        sendingMessage.messageId = res.data.messageId
-        sendingMessage.createTime = res.data.createTime
-        sendingMessage.sendStatus = 1
-        const chatItem = this.recentChatList.find((item) => item.recentChat.roomId == data.roomId)
-        this.recentChatList = this.recentChatList.filter(
-          (item) => item.recentChat.roomId != data.roomId
-        )
-        chatItem.lastMessage = res.data
-        this.recentChatList.unshift(chatItem)
+      const message = this.currentChatHistory.find(
+        (item) => item.messageId === sendingMessage.messageId
+      )
+      try {
+        const res = await sendMessage(data)
+        if (res.code === 200) {
+          message.sendStatus = 1
+          message.messageId = res.data.messageId
+          message.createTime = res.data.createTime
+          const chatItem = this.recentChatList.find((item) => item.recentChat.roomId == data.roomId)
+          this.recentChatList = this.recentChatList.filter(
+            (item) => item.recentChat.roomId != data.roomId
+          )
+          chatItem.lastMessage = res.data
+          this.recentChatList.unshift(chatItem)
+        } else {
+          message.sendStatus = -1
+        }
+        return res
+      } catch (err) {
+        message.sendStatus = -1
+        throw err
       }
-      return res
     },
     // 向当前会话聊天记录添加消息
     addCurrentChatHistory(msg) {
@@ -114,6 +124,7 @@ export const useChatStore = defineStore('chatStore', {
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
         this.currentChatInfo = res.data
+        this.currentChatHistory = []
       }
       return res
     },
@@ -122,6 +133,7 @@ export const useChatStore = defineStore('chatStore', {
       if (res.code === 200) {
         this.recentChatList.unshift(res.data)
         this.currentChatInfo = res.data
+        this.currentChatHistory = []
       }
       return res
     },

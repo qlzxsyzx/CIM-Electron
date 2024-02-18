@@ -78,6 +78,7 @@ const progressCallback = (progress) => {
 }
 
 const resultCallback = (result) => {
+    console.log(result)
     result === 'success' ? fileState.status = 1 : fileState.status = 2
 }
 

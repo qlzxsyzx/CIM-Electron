@@ -126,6 +126,7 @@ const handleSendFileMessage = () => {
         receiverType: props.messageInfo.receiverType,
         type: props.messageInfo.type,
         content: props.messageInfo.content,
+        contentText: props.messageInfo.contentText,
         recordId: fileState.recordId
     }
     chatStore.sendMessage(props.messageInfo, createMessageDto).then(res => {
@@ -133,7 +134,10 @@ const handleSendFileMessage = () => {
             ElMessage.success('发送成功')
         }
     }
-    ).catch(err => ElMessage.error("发送失败"))
+    ).catch(err => {
+        console.log(err)
+        ElMessage.error("发送失败")
+    })
 }
 
 const handleDownload = () => {

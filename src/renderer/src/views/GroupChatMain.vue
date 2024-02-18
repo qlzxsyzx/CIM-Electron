@@ -132,7 +132,7 @@ const groupStore = useGroupStore()
 const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore();
 const isLoading = ref(true)
-const isTop = ref(false)
+const isLoadingMore = ref(false)
 const isBottom = ref(false)
 const isNeedScrollToBottom = ref(true)
 const pageSize = ref(10)
@@ -149,7 +149,7 @@ onBeforeMount(() => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
-                    if (res.data.length < 10) {
+                    if (res.data.length < pageSize.value) {
                         isHasMore.value = false
                     }
                     if (isNeedScrollToBottom.value) {
@@ -167,7 +167,6 @@ onBeforeRouteUpdate((to, from, next) => {
     console.log('onBeforeRouteUpdate')
     isLoading.value = true
     isNeedScrollToBottom.value = true
-    isTop.value = false
     isBottom.value = false
     isHasMore.value = true
     // 获取群组信息
@@ -178,7 +177,7 @@ onBeforeRouteUpdate((to, from, next) => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
-                    if (res.data.length < 10) {
+                    if (res.data.length < pageSize.value) {
                         isHasMore.value = false
                     }
                     if (isNeedScrollToBottom.value) {
@@ -203,7 +202,7 @@ useReconnect(() => {
             // 获取聊天记录
             chatStore.getChatMessageList(res.data.roomId, pageSize.value).then(res => {
                 if (res.code === 200) {
-                    if (res.data.length < 10) {
+                    if (res.data.length < pageSize.value) {
                         isHasMore.value = false
                     }
                     if (isNeedScrollToBottom.value) {
@@ -361,18 +360,18 @@ const chatMessageList = computed(() => {
     }
 })
 
-watchPostEffect(() => {
-    if (isTop.value && isHasMore.value) {
-        chatStore.getMoreChatMessages(route.params.roomId, pageSize.value).then(res => {
-            if (res.code === 200) {
-                if (res.data.length < 10) {
-                    isHasMore.value = false
-                }
-                isTop.value = false
+const getMoreMessage = async () => {
+    if (!isHasMore.value || isLoadingMore.value) return
+    isLoadingMore.value = true
+    chatStore.getMoreChatMessages(currentChatInfo.value.roomId, pageSize.value).then(res => {
+        if (res.code === 200) {
+            if (res.data.length < pageSize.value) {
+                isHasMore.value = false
             }
-        })
-    }
-})
+            isLoadingMore.value = false
+        }
+    })
+}
 
 const firstOpenScroll = () => {
     nextTick(() => {
@@ -398,11 +397,13 @@ const handleScroll = () => {
         isBottom.value = false
         isNeedScrollToBottom.value = false
     }
-    // 判断是否滚动到顶部-50,滚到就获取更多消息
-    if (scrollTop <= 50 && chatMessageList.value.length >= 10) {
-        isTop.value = true
-    } else {
-        isTop.value = false
+    // 判断是否滚动到顶部,滚到就获取更多消息
+    const index = chatMessageList.value[chatMessageList.value.length - 1].messageId
+    // 点击后scroll到index id位置
+    const child = document.getElementById(`message-${index}`)
+    const rect = child.getBoundingClientRect()
+    if (rect.top >= 0 && rect.bottom <= el.clientHeight) {
+        getMoreMessage()
     }
 };
 
@@ -413,7 +414,9 @@ const scrollToBottom = async () => {
     const el = document.getElementById(`message-${index}`)
     if (!el) return
     // scroll 到 el的位置
-    el.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
+    setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' })
+    })
 }
 
 const inputArea = ref()
@@ -456,10 +459,11 @@ const fileUploadCallback = (file) => {
         roomId: route.params.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: group.value.id,
-        receiverType: 2,
+        receiverType: 1,
         type: 3,
         sendStatus: 0,
         content: file.name,
+        contentText: file.name,
         createTime: new Date(),
         file: file
     }
@@ -566,10 +570,11 @@ const handleSendMesage = async () => {
         roomId: route.params.roomId,
         senderId: userStore.userInfo.userId,
         receiverId: group.value.id,
-        receiverType: 2,
+        receiverType: 1,
         type: 1,
         sendStatus: 0,
         content: encodeMessage,
+        contentText: messageInput.value.innerText,
         recordId: null,
         createTime: new Date()
     }
@@ -622,6 +627,7 @@ const handleSendMesage = async () => {
             receiverType: 1,
             type: 1,
             content: saveMessage,
+            contentText: messageInput.value.innerText,
             recordId: null
         }
         chatStore.sendMessage(sendingMessage, createMessageDto).then(res => {

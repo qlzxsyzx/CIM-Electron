@@ -106,6 +106,9 @@ const bigFileDownload = async (recordId, fileName, fileSize, progressCallback, r
             // 分片没有下载完全
             resultCallback('fail')
           }
+        }).catch((err) => {
+          console.log('获取文件信息失败', err)
+          resultCallback('fail')
         })
       } else {
         resultCallback('fail')

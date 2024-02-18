@@ -26,6 +26,17 @@
                             </template>
                         </template>
                     </div>
+                    <div class="status-container" v-if="props.messageInfo.type === 1">
+                        <MessageItemLoader v-show="sendStatus === 0" />
+                        <el-dropdown trigger="click" @command="handleErrorCommand" placement="top" v-show="sendStatus === -1">
+                            <div>
+                                <SvgIcon iconName="error" iconClass="error__icon" />
+                            </div>
+                            <template #dropdown>
+                                <el-dropdown-item :command="1">重发</el-dropdown-item>
+                            </template>
+                        </el-dropdown>
+                    </div>
                 </div>
             </div>
         </div>
@@ -33,7 +44,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watchPostEffect, nextTick, onBeforeMount } from 'vue'
 import FileUploadMessage from './FileUploadMessage.vue';
 import FileDownloadMessage from './FileDownloadMessage.vue';
 import { useUserStore } from '../store/userStore'
@@ -43,6 +54,8 @@ import { useFriendStore } from '../store/friendStore';
 import { useGroupStore } from '../store/groupStore';
 import { formatMessageDateTime } from '../assets/js/format'
 import { decodeMessageToHtml } from '../assets/js/utils';
+import MessageItemLoader from './MessageItemLoader.vue';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps(["messageInfo"])
 const userStore = useUserStore()
@@ -50,6 +63,9 @@ const chatStore = useChatStore()
 const userInfoStore = useUserInfoStore()
 const friendStore = useFriendStore()
 const groupStore = useGroupStore()
+const sendStatus = computed(() => {
+    return props.messageInfo.sendStatus
+})
 
 const currentChatInfo = computed(() => {
     if (!chatStore.currentChatInfo) return null
@@ -116,6 +132,33 @@ const type = computed(() => {
             return "text";
     }
 })
+
+const handleErrorCommand = (command) => {
+    if(command === 1){
+        const message = chatStore.currentChatHistory.find((item) => item.messageId === sendingMessage.messageId)
+        chatStore.currentChatHistory = chatStore.currentChatHistory.filter((item) => item.messageId !== sendingMessage.messageId)
+        message.sendStatus = 0
+        chatStore.currentChatHistory.unshift(message)
+        const createMessageDto = {
+            roomId: message.roomId,
+            senderId: message.senderId,
+            receiverId: message.receiverId,
+            receiverType: message.receiverType,
+            type: message.type,
+            content: message.content,
+            contentText: message.contentText,
+            recordId: null
+        }
+        chatStore.sendMessage(message, createMessageDto).then(res => {
+            if (res.code == 200) {
+                ElMessage.success('发送成功')
+            } 
+        }
+        ).catch(err => {
+           ElMessage.error("发送失败")
+        })
+    }
+}
 </script>
 
 <style scoped lang="scss">
@@ -231,6 +274,24 @@ const type = computed(() => {
                             left: auto;
                             right: -10px;
                             border-top-color: rgb(88, 127, 240);
+                        }
+                    }
+
+                    .status-container {
+                        position: relative;
+                        width: 20px;
+                        height: 20px;
+                        margin-top: auto;
+
+                        .error__icon {
+                            width: 20px;
+                            height: 20px;
+                            transform: translateY(-2px);
+                            cursor: pointer;
+
+                            path {
+                                fill: #EF665B;
+                            }
                         }
                     }
                 }
